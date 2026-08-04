@@ -46,19 +46,23 @@ import subprocess
 import time
 
 
-_sleep_time                                                 = 0.200             # 200 ms
+_sleep_time_200_ms                                          = 0.200             # 200 ms
+_sleep_time_60_s                                            = 60                # 60 s
 _fpga_device_address                                        = "5582:00:00.0"    # TODO: Get right address
-_address_Advanced_Error_Reporting_Capability_ID_Register    = 0x100
-_address_Uncorrectable_Error_Status_Register                = 0x104
-_address_Uncorrectable_Error_Mask_Register                  = 0x108
-_address_Uncorrectable_Error_Severity_Register              = 0x10C
-_address_Correctable_Error_Status_Register                  = 0x110
-_address_Correctable_Error_Mask_Register                    = 0x114
-_address_Advanced_Error_Capabilities_and_Control_Register   = 0x118
-_address_Root_Error_Command_Register                        = 0x12C
-_address_Root_Error_Status_Register                         = 0x130
-_address_Correctable_Error_Source_ID_Register               = 0x134
-_address_Error_Source_ID_Register                           = 0x136
+_address_advanced_error_reporting_capability_id_register    = 0x100
+_address_uncorrectable_error_status_register                = 0x104
+_address_uncorrectable_error_mask_register                  = 0x108
+_address_uncorrectable_error_severity_register              = 0x10C
+_address_correctable_error_status_register                  = 0x110
+_address_correctable_error_mask_register                    = 0x114
+_address_advanced_error_capabilities_and_control_register   = 0x118
+_address_root_error_command_register                        = 0x12C
+_address_root_error_status_register                         = 0x130
+_address_correctable_error_source_id_register               = 0x134
+_address_error_source_id_register                           = 0x136
+
+_value_uncorrectable_error_mask_register                    = 0x001ff010
+_value_uncorrectable_error_severity_register                = 0x001ff010
 
 
 def read_register(Device, Register, Size):
@@ -97,7 +101,7 @@ def read_reset_register(Device, Register, Size):
     except:
         return False, 0
 
-    time.sleep(_sleep_time)
+    time.sleep(_sleep_time_200_ms)
 
     return True, value
 
@@ -114,7 +118,7 @@ def write_register(Device, Register, Size, Value):
     except:
         return False
 
-    time.sleep(_sleep_time)
+    time.sleep(_sleep_time_200_ms)
 
     try:
         result = subprocess.run(
@@ -131,6 +135,20 @@ def write_register(Device, Register, Size, Value):
         return False
 
 
+def_write_mask(Device, Register, Size, Mask):
+    [status, register_value] = read_register(Device, Register, Size)
+
+    if status == False:
+        print("Failed to read register")
+        return False
+
+    register_value = (register_value & !Mask) | Mask
+
+    if write_register(Device, Register, Size, register_value) == False:
+        print("Failed to write register")
+        return False
+
+
 def verify_setpci_availability():
     try:
         result = subprocess.run(
@@ -144,14 +162,33 @@ def verify_setpci_availability():
         return True
 
 
+def configure():
+    if def_write_mask(_fpga_device_address, _address_uncorrectable_error_mask_register, "W", _value_uncorrectable_error_mask_register) == False:
+        print("Failed to set uncorrectable_error_mask_register")
+        return False
+
+    # TODO: Set remaining config registers
+
+    return True
+
+
 def main():
     if verify_setpci_availability() == False:
         print("setpci not available")
         return -1
 
-    if write_register(_fpga_device_address, _address_Advanced_Error_Reporting_Capability_ID_Register, "W", 0xabcd) == False:
-        print("Advanced Error Reporting Capability not available")
+    if configure() == False:
+        print("Failed to configure device")
         return -1
+
+    while True:
+        time.sleep(_sleep_time_60_s)
+
+        [status, value] = read_reset_register(_fpga_device_address, _address_uncorrectable_error_status_register, "W")
+
+        if status == False:
+            print("Failed to read and reset uncorrectable_error_status_register")
+            return -1
 
     return 0
 
