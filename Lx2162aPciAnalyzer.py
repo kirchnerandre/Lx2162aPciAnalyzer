@@ -74,6 +74,34 @@ def read_register(Device, Register, Size):
         return False, 0
 
 
+def read_reset_register(Device, Register, Size):
+    value = 0
+
+    try:
+        result = subprocess.run(
+            ["setpci", "-s", Device, f"{Register:#x}.{Size}"],
+            check=True,
+            text=True,
+            capture_output=True)
+
+        value = int(result.stdout, 16)
+    except:
+        return False, 0
+
+    try:
+        result = subprocess.run(
+            ["setpci", "-s", Device, f"{Register:#x}.{Size}=0"],
+            check=True,
+            text=True,
+            capture_output=True)
+    except:
+        return False, 0
+
+    time.sleep(_sleep_time)
+
+    return True, value
+
+
 def write_register(Device, Register, Size, Value):
     value = 0
 
@@ -83,8 +111,6 @@ def write_register(Device, Register, Size, Value):
             check=True,
             text=True,
             capture_output=True)
-
-        value = int(result.stdout, 16)
     except:
         return False
 
@@ -112,21 +138,6 @@ def verify_setpci_availability():
             check=True,
             text=True,
             capture_output=True)
-    except:
-        return False
-    else:
-        return True
-
-
-def verify_advanced_error_reporting_capability_availability():
-    try:
-        result = subprocess.run(
-            ["setpci", "-s", _fpga_device_address, f"{_address_Advanced_Error_Reporting_Capability_ID_Register:#x}.W"],
-            check=True,
-            text=True,
-            capture_output=True)
-
-        print(result.stdout)
     except:
         return False
     else:
