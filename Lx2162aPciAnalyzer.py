@@ -43,10 +43,11 @@ PCIe3
 
 
 import subprocess
+import time
 
 
+_sleep_time                                                 = 0.200             # 200 ms
 _fpga_device_address                                        = "5582:00:00.0"    # TODO: Get right address
-
 _address_Advanced_Error_Reporting_Capability_ID_Register    = 0x100
 _address_Uncorrectable_Error_Status_Register                = 0x104
 _address_Uncorrectable_Error_Mask_Register                  = 0x108
@@ -58,6 +59,37 @@ _address_Root_Error_Command_Register                        = 0x12C
 _address_Root_Error_Status_Register                         = 0x130
 _address_Correctable_Error_Source_ID_Register               = 0x134
 _address_Error_Source_ID_Register                           = 0x136
+
+
+def write_register(Device, Register, Size, Value):
+    value = 0
+
+    try:
+        result = subprocess.run(
+            ["setpci", "-s", Device, f"{Register:#x}.{Size}={Value}"],
+            check=True,
+            text=True,
+            capture_output=True)
+
+        value = int(result.stdout, 16)
+    except:
+        return False
+
+    time.sleep(_sleep_time)
+
+    try:
+        result = subprocess.run(
+            ["setpci", "-s", Device, f"{Register:#x}.{Size}"],
+            check=True,
+            text=True,
+            capture_output=True)
+
+        value = int(result.stdout, 16)
+    except:
+        return False
+
+    if Value != value:
+        return False
 
 
 def verify_setpci_availability():
@@ -80,14 +112,12 @@ def verify_advanced_error_reporting_capability_availability():
             check=True,
             text=True,
             capture_output=True)
+
+        print(result.stdout)
     except:
         return False
     else:
         return True
-
-
-def configure_masks():
-    pass
 
 
 def main():
@@ -95,7 +125,7 @@ def main():
         print("setpci not available")
         return -1
 
-    if verify_advanced_error_reporting_capability_availability() == False:
+    if write_register(_fpga_device_address, _address_Advanced_Error_Reporting_Capability_ID_Register, "W", 0xabcd) == False:
         print("Advanced Error Reporting Capability not available")
         return -1
 
