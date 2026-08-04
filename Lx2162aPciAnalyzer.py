@@ -61,6 +61,19 @@ _address_Correctable_Error_Source_ID_Register               = 0x134
 _address_Error_Source_ID_Register                           = 0x136
 
 
+def read_register(Device, Register, Size):
+    try:
+        result = subprocess.run(
+            ["setpci", "-s", Device, f"{Register:#x}.{Size}"],
+            check=True,
+            text=True,
+            capture_output=True)
+
+        return True, int(result.stdout, 16)
+    except:
+        return False, 0
+
+
 def write_register(Device, Register, Size, Value):
     value = 0
 
