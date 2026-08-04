@@ -74,15 +74,16 @@ def verify_setpci_availability():
 
 
 def verify_advanced_error_reporting_capability_availability():
-    result = subprocess.run(
-        ["setpci", "-s 5582:00:00.0", "100.W"],
-        check=True,
-        text=True,
-        capture_output=True)
-
-    print(result.stderr)
-
-    return True
+    try:
+        result = subprocess.run(
+            ["setpci", "-s", _fpga_device_address, f"{_address_Advanced_Error_Reporting_Capability_ID_Register:#x}.W"],
+            check=True,
+            text=True,
+            capture_output=True)
+    except:
+        return False
+    else:
+        return True
 
 
 def configure_masks():
