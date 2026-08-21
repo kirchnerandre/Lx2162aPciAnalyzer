@@ -1,3 +1,79 @@
+#!/usr/bin/env python3
+
+
+import subprocess
+
+
+def verify_setpci_availability():
+    try:
+        result = subprocess.run(
+            ["setpci", "--version"],
+            check=True,
+            text=True,
+            capture_output=True)
+    except:
+        return False
+    else:
+        return True
+
+
+def verify_lspci_availability():
+    try:
+        result = subprocess.run(
+            ["lspci", "--version"],
+            check=True,
+            text=True,
+            capture_output=True)
+    except:
+        return False
+    else:
+        return True
+
+
+def find_fpga_nic():
+    device = None
+
+    try:
+        result = subprocess.run(
+            ["lspci", "-D"],
+            check=True,
+            text=True,
+            capture_output=True)
+
+        for line in result.stdout.splitlines():
+            if "Ethernet controller: Microsoft Corporation Device 00b8" in line:
+                device = line.split()[0]
+    except:
+        return False, None
+
+    return True, device
+
+
+def main():
+    if verify_setpci_availability() == False:
+        print("setpci not available")
+        return -1
+
+    if verify_lspci_availability() == False:
+        print("lspci not available")
+        return -1
+
+    retval, address = find_fpga_nic()
+
+    if retval == False:
+        print("Failed to find FPGA nic")
+        return -1
+
+    print(address)
+
+    return 0
+
+
+if __name__ == "__main__":
+    main()
+
+
+
 '''
 PCIe1 base address: 340_0000h
 PCIe3 base address: 360_0000h
@@ -36,16 +112,6 @@ PCIe3
 
 160h Lane Error Status Register                                     (LANE_ERR_STATUS_REG)                               32 W1C 0000_0000h
 
-'''
-
-
-
-#!/usr/bin/env python3
-
-
-import subprocess
-import time
-
 
 _sleep_time_200_ms                                          = 0.200             # 200 ms
 _sleep_time_60_s                                            = 60                # 60 s
@@ -64,45 +130,4 @@ _address_error_source_id_register                           = 0x136
 
 _value_uncorrectable_error_mask_register                    = 0x001ff010
 _value_uncorrectable_error_severity_register                = 0x001ff010
-
-
-def verify_setpci_availability():
-    try:
-        result = subprocess.run(
-            ["setpci", "--version"],
-            check=True,
-            text=True,
-            capture_output=True)
-    except:
-        return False
-    else:
-        return True
-
-
-def verify_lspci_availability():
-    try:
-        result = subprocess.run(
-            ["lspci", "--version"],
-            check=True,
-            text=True,
-            capture_output=True)
-    except:
-        return False
-    else:
-        return True
-
-
-def main():
-    if verify_setpci_availability() == False:
-        print("setpci not available")
-        return -1
-
-    if verify_lspci_availability() == False:
-        print("lspci not available")
-        return -1
-
-    return 0
-
-
-if __name__ == "__main__":
-    main()
+'''
