@@ -54,24 +54,37 @@ def read_register(Device, Register, Size):
 
     try:
         result = subprocess.run(
-            ["setpci", "-s " + Device, Register + "." + Size],
+            ["setpci", "-s " + Device, hex(Register) + "." + Size],
             check=True,
             text=True,
             capture_output=True)
 
         value = int(result.stdout, 16)
-    except Except as e:
-        print(e)
+    except:
         return False, None
 
     return True, value
 
 
+def set_register(Device, Register, Size, Value):
+    try:
+        result = subprocess.run(
+            ["setpci", "-s " + Device, hex(Register) + "." + Size + "=" + hex(Value)],
+            check=True,
+            text=True,
+            capture_output=True)
+    except Except as e:
+        print(e)
+        return False
+
+    return True
+
+
 def verify_advanced_error_reporting_capability_availability(Device):
-    advanced_error_reporting_capability_id_register     = "0100"
+    advanced_error_reporting_capability_id_register     = 0x0100
     advanced_error_reporting_capability_value_expected  = 0x0001
 
-    retval, value = read_register(Device, advanced_error_reporting_capability_id_register, "w")
+    retval, value = read_register(Device, advanced_error_reporting_capability_id_register, "W")
 
     if retval == False:
         print("Failed to read register")
@@ -85,6 +98,9 @@ def verify_advanced_error_reporting_capability_availability(Device):
 
 
 def main():
+    uncorrectable_error_mask_register   = 0x108
+    uncorrectable_error_mask_value      = 0x001ff010
+
     if verify_setpci_availability() == False:
         print("setpci not available")
         return -1
@@ -102,6 +118,16 @@ def main():
     if verify_advanced_error_reporting_capability_availability(device) == False:
         print("Capability not available")
         return -1
+
+    retval, value = read_register(device, uncorrectable_error_mask_register, "L")
+    print(hex(value))
+
+    if set_register(device, uncorrectable_error_mask_register, "L", uncorrectable_error_mask_value) == False:
+        print("Failed to set uncorrectable error mask register")
+        return -1
+
+    retval, value = read_register(device, uncorrectable_error_mask_register, "L")
+    print(hex(value))
 
     return 0
 
