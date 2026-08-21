@@ -1,7 +1,27 @@
 #!/usr/bin/env python3
 
 
+import datetime
 import subprocess
+import time
+
+
+uncorrectable_error_status_register                 = 0x0104        # Error Data
+correctable_error_status_register                   = 0x0110        # Error Data
+header_log_register_dword1                          = 0x011c        # Error Data
+header_log_register_dword2                          = 0x0120        # Error Data
+header_log_register_dword3                          = 0x0124        # Error Data
+header_log_register_dword4                          = 0x0128        # Error Data
+
+uncorrectable_error_mask_register                   = 0x0108
+uncorrectable_error_severity_register               = 0x010c
+correctable_error_mask_register                     = 0x0114
+advanced_error_capabilities_and_control_register    = 0x0118
+
+uncorrectable_error_mask_value                      = 0x001ff010
+uncorrectable_error_severity_value                  = 0x001ff010
+correctable_error_mask_value                        = 0x000031c1
+advanced_error_capabilities_and_control_value       = 0x000001e0    # Error Data 5-0
 
 
 def verify_setpci_availability():
@@ -97,13 +117,88 @@ def verify_advanced_error_reporting_capability_availability(Device):
     return True
 
 
-def main():
-    uncorrectable_error_status_register     = 0x0104
-    uncorrectable_error_mask_register       = 0x0108
-    uncorrectable_error_mask_value          = 0x001ff010
-    Uncorrectable_error_severity_register   = 0x010c
-    uncorrectable_error_severity_value      = 0x001ff010
+def configure(Device):
+    if set_register(Device, uncorrectable_error_mask_register, "L", uncorrectable_error_mask_value) == False:
+        print("Failed to set uncorrectable error mask register")
+        return False
 
+    if set_register(Device, uncorrectable_error_severity_register, "L", uncorrectable_error_severity_value) == False:
+        print("Failed to set uncorrectable error severity register")
+        return False
+
+    if set_register(Device, correctable_error_mask_register, "L", correctable_error_mask_value) == False:
+        print("Failed to set uncorrectable error mask register")
+        return False
+
+    if set_register(Device, advanced_error_capabilities_and_control_register, "L", advanced_error_capabilities_and_control_value) == False:
+        print("Failed to set uncorrectable error severity register")
+        return False
+
+    return True
+
+
+def print_data(Device):
+    retval, value_uncorrectable_error_status_register = read_register(Device, uncorrectable_error_status_register, "L")
+
+    if retval == False:
+        print("Failed to read uncorrectable error status register")
+        return false;
+
+    if set_register(Device, uncorrectable_error_status_register, "L", 0) == False:
+        print("Failed to clear uncorrectable error status register")
+        return false;
+
+    retval, value_correctable_error_status_register = read_register(Device, correctable_error_status_register, "L")
+
+    if retval == False:
+        print("Failed to read correctable error status register")
+        return false;
+
+    if set_register(Device, correctable_error_status_register, "L", 0) == False:
+        print("Failed to clear correctable error status register")
+        return false;
+
+    retval, value_header_log_register_dword1 = read_register(Device, header_log_register_dword1, "L")
+
+    if retval == False:
+        print("Failed to read header log register dword1")
+        return false;
+
+    retval, value_header_log_register_dword2 = read_register(Device, header_log_register_dword2, "L")
+
+    if retval == False:
+        print("Failed to read header log register dword2")
+        return false;
+
+    retval, value_header_log_register_dword3 = read_register(Device, header_log_register_dword3, "L")
+
+    if retval == False:
+        print("Failed to read header log register dword3")
+        return false;
+
+    retval, value_header_log_register_dword4 = read_register(Device, header_log_register_dword4, "L")
+
+    if retval == False:
+        print("Failed to read header log register dword4")
+        return false;
+
+    retval, value_advanced_error_capabilities_and_control_value = read_register(Device, advanced_error_capabilities_and_control_value,  "L")
+
+    if retval == False:
+        print("Failed to read advanced error capabilities and control value")
+        return false;
+
+    print(f" {datetime.datetime.now().time()}"
+          f" {value_uncorrectable_error_status_register             :08X}"
+          f" {value_correctable_error_status_register               :08X}"
+          f" {value_header_log_register_dword1                      :08X}"
+          f" {value_header_log_register_dword2                      :08X}"
+          f" {value_header_log_register_dword3                      :08X}"
+          f" {value_header_log_register_dword4                      :08X}"
+          f" {value_advanced_error_capabilities_and_control_value   :08X}")
+
+
+def main():
     if verify_setpci_availability() == False:
         print("setpci not available")
         return -1
@@ -122,79 +217,22 @@ def main():
         print("Capability not available")
         return -1
 
-    if set_register(device, uncorrectable_error_mask_register, "L", uncorrectable_error_mask_value) == False:
-        print("Failed to set uncorrectable error mask register")
+    if configure(device) == False:
+        print("Failed to configure")
         return -1
 
-    if set_register(device, Uncorrectable_error_severity_register, "L", uncorrectable_error_severity_value) == False:
-        print("Failed to set uncorrectable error severity register")
-        return -1
+    try:
+        next_run = time.monotonic()
+
+        while True:
+            next_run += 1
+            time.sleep(max(0, next_run - time.monotonic()))
+            print_data(device)
+    except:
+        pass
 
     return 0
 
 
 if __name__ == "__main__":
     main()
-
-
-
-
-'''
-PCIe1 base address: 340_0000h
-PCIe3 base address: 360_0000h
-PCIe4 base address: 370_0000h
-
-******
-Common
-******
-
-100h PCI Express Advanced Error Reporting Capability ID Register    (Advanced_Error_Reporting_Capability_ID_Register)   16 RO  0001h
-104h PCI Express Uncorrectable Error Status Register                (uncorrectable_error_status_register)               32 W1C 0000_0000h
-108h PCI Express Uncorrectable Error Mask Register                  (Uncorrectable_Error_Mask_Register)                 32 RW  0000_0000h
-
-10Ch PCI Express Uncorrectable Error Severity Register              (Uncorrectable_Error_Severity_Register)             32 RW  0046_2030h
-110h PCI Express Correctable Error Status Register                  (Correctable_Error_Status_Register)                 32 W1C 0000_0000h
-114h PCI Express Correctable Error Mask Register                    (Correctable_Error_Mask_Register)                   32 RW  0000_2000h
-
-118h PCI Express Advanced Error Capabilities and Control Register   (Advanced_Error_Capabilities_and_Control_Register)  32 RW  0000_00A0h
-12Ch PCI Express Root Error Command Register                        (Root_Error_Command_Register)                       32 RW  0000_0000h
-130h PCI Express Root Error Status Register                         (Root_Error_Status_Register)                        32 W1C 0000_0000h
-134h PCI Express Correctable Error Source ID Register               (Correctable_Error_Source_ID_Register)              16 RO  0000h
-136h PCI Express Error Source ID Register                           (Error_Source_ID_Register)                          16 RO  0000h
-
-11Ch PCI Express Header Log Register 1                              (Header_Log_Register_DWORD1)                        32 RO  0000_0000h
-120h PCI Express Header Log Register 2                              (Header_Log_Register_DWORD2)                        32 RO  0000_0000h
-124h PCI Express Header Log Register 3                              (Header_Log_Register_DWORD3)                        32 RO  0000_0000h
-128h PCI Express Header Log Register 4                              (Header_Log_Register_DWORD4)                        32 RO  0000_0000h
-
-***************
-PCIe1 and PCIe4
-***************
-
-150h Lane Error Status Register                                     (LANE_ERR_STATUS_REG)                               32 W1C 0000_0000h
-
-*****
-PCIe3
-*****
-
-160h Lane Error Status Register                                     (LANE_ERR_STATUS_REG)                               32 W1C 0000_0000h
-
-
-_sleep_time_200_ms                                          = 0.200             # 200 ms
-_sleep_time_60_s                                            = 60                # 60 s
-_fpga_device_address                                        = "5582:00:00.0"    # TODO: Get right address
-_address_advanced_error_reporting_capability_id_register    = 0x100
-_address_uncorrectable_error_status_register                = 0x104
-_address_uncorrectable_error_mask_register                  = 0x108
-_address_uncorrectable_error_severity_register              = 0x10C
-_address_correctable_error_status_register                  = 0x110
-_address_correctable_error_mask_register                    = 0x114
-_address_advanced_error_capabilities_and_control_register   = 0x118
-_address_root_error_command_register                        = 0x12C
-_address_root_error_status_register                         = 0x130
-_address_correctable_error_source_id_register               = 0x134
-_address_error_source_id_register                           = 0x136
-
-_value_uncorrectable_error_mask_register                    = 0x001ff010
-_value_uncorrectable_error_severity_register                = 0x001ff010
-'''
