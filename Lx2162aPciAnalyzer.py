@@ -98,8 +98,11 @@ def verify_advanced_error_reporting_capability_availability(Device):
 
 
 def main():
-    uncorrectable_error_mask_register   = 0x108
-    uncorrectable_error_mask_value      = 0x001ff010
+    uncorrectable_error_status_register     = 0x0104
+    uncorrectable_error_mask_register       = 0x0108
+    uncorrectable_error_mask_value          = 0x001ff010
+    Uncorrectable_error_severity_register   = 0x010c
+    uncorrectable_error_severity_value      = 0x001ff010
 
     if verify_setpci_availability() == False:
         print("setpci not available")
@@ -119,15 +122,13 @@ def main():
         print("Capability not available")
         return -1
 
-    retval, value = read_register(device, uncorrectable_error_mask_register, "L")
-    print(hex(value))
-
     if set_register(device, uncorrectable_error_mask_register, "L", uncorrectable_error_mask_value) == False:
         print("Failed to set uncorrectable error mask register")
         return -1
 
-    retval, value = read_register(device, uncorrectable_error_mask_register, "L")
-    print(hex(value))
+    if set_register(device, Uncorrectable_error_severity_register, "L", uncorrectable_error_severity_value) == False:
+        print("Failed to set uncorrectable error severity register")
+        return -1
 
     return 0
 
@@ -148,11 +149,13 @@ Common
 ******
 
 100h PCI Express Advanced Error Reporting Capability ID Register    (Advanced_Error_Reporting_Capability_ID_Register)   16 RO  0001h
-104h PCI Express Uncorrectable Error Status Register                (Uncorrectable_Error_Status_Register)               32 W1C 0000_0000h
+104h PCI Express Uncorrectable Error Status Register                (uncorrectable_error_status_register)               32 W1C 0000_0000h
 108h PCI Express Uncorrectable Error Mask Register                  (Uncorrectable_Error_Mask_Register)                 32 RW  0000_0000h
+
 10Ch PCI Express Uncorrectable Error Severity Register              (Uncorrectable_Error_Severity_Register)             32 RW  0046_2030h
 110h PCI Express Correctable Error Status Register                  (Correctable_Error_Status_Register)                 32 W1C 0000_0000h
 114h PCI Express Correctable Error Mask Register                    (Correctable_Error_Mask_Register)                   32 RW  0000_2000h
+
 118h PCI Express Advanced Error Capabilities and Control Register   (Advanced_Error_Capabilities_and_Control_Register)  32 RW  0000_00A0h
 12Ch PCI Express Root Error Command Register                        (Root_Error_Command_Register)                       32 RW  0000_0000h
 130h PCI Express Root Error Status Register                         (Root_Error_Status_Register)                        32 W1C 0000_0000h
