@@ -50,17 +50,38 @@ def find_fpga_nic():
 
 
 def read_register(Device, Register, Size):
+    value = 0
+
     try:
         result = subprocess.run(
             ["setpci", "-s " + Device, Register + "." + Size],
             check=True,
             text=True,
             capture_output=True)
+
+        value = int(result.stdout, 16)
     except Except as e:
         print(e)
         return False, None
 
-    return True, result.stdout
+    return True, value
+
+
+def verify_advanced_error_reporting_capability_availability(Device):
+    advanced_error_reporting_capability_id_register     = "0100"
+    advanced_error_reporting_capability_value_expected  = 0x0001
+
+    retval, value = read_register(Device, advanced_error_reporting_capability_id_register, "w")
+
+    if retval == False:
+        print("Failed to read register")
+        return False
+
+    if value != advanced_error_reporting_capability_value_expected:
+        print("Advanced error reporting capability not supported")
+        return False
+
+    return True
 
 
 def main():
@@ -72,27 +93,22 @@ def main():
         print("lspci not available")
         return -1
 
-    retval, address = find_fpga_nic()
+    retval, device = find_fpga_nic()
 
     if retval == False:
         print("Failed to find FPGA nic")
         return -1
 
-    print(address)
-
-    retval, register = read_register(address, "0100", "w")
-
-    if retval == False:
-        print("Failed to read register")
+    if verify_advanced_error_reporting_capability_availability(device) == False:
+        print("Capability not available")
         return -1
-
-    print(register)
 
     return 0
 
 
 if __name__ == "__main__":
     main()
+
 
 
 
