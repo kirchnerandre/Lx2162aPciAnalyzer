@@ -49,6 +49,20 @@ def find_fpga_nic():
     return True, device
 
 
+def read_register(Device, Register, Size):
+    try:
+        result = subprocess.run(
+            ["setpci", "-s " + Device, Register + "." + Size],
+            check=True,
+            text=True,
+            capture_output=True)
+    except Except as e:
+        print(e)
+        return False, None
+
+    return True, result.stdout
+
+
 def main():
     if verify_setpci_availability() == False:
         print("setpci not available")
@@ -65,6 +79,14 @@ def main():
         return -1
 
     print(address)
+
+    retval, register = read_register(address, "0100", "w")
+
+    if retval == False:
+        print("Failed to read register")
+        return -1
+
+    print(register)
 
     return 0
 
