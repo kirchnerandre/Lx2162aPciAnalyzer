@@ -3,25 +3,32 @@
 
 import datetime
 import subprocess
+import sys
 import time
 
 
-uncorrectable_error_status_register                 = 0x0104        # Error Data
-correctable_error_status_register                   = 0x0110        # Error Data
-header_log_register_dword1                          = 0x011c        # Error Data
-header_log_register_dword2                          = 0x0120        # Error Data
-header_log_register_dword3                          = 0x0124        # Error Data
-header_log_register_dword4                          = 0x0128        # Error Data
+uncorrectable_error_status_register                 = 0x0104
+correctable_error_status_register                   = 0x0110
+header_log_register_dword1                          = 0x011c
+header_log_register_dword2                          = 0x0120
+header_log_register_dword3                          = 0x0124
+header_log_register_dword4                          = 0x0128
+root_error_status_register                          = 0x0130
+correctable_error_source_id_register                = 0x0134
+Error_Source_ID_Register                            = 0x0136
+lane_err_status_reg                                 = 0x0150
 
 uncorrectable_error_mask_register                   = 0x0108
 uncorrectable_error_severity_register               = 0x010c
 correctable_error_mask_register                     = 0x0114
 advanced_error_capabilities_and_control_register    = 0x0118
+root_error_command_register                         = 0x012c
 
 uncorrectable_error_mask_value                      = 0x001ff010
 uncorrectable_error_severity_value                  = 0x001ff010
 correctable_error_mask_value                        = 0x000031c1
-advanced_error_capabilities_and_control_value       = 0x000001e0    # Error Data 5-0
+advanced_error_capabilities_and_control_value       = 0x000001e0    # Error Data bits 5-0
+root_error_command_value                            = 0x00000007
 
 
 def verify_setpci_availability():
@@ -134,6 +141,10 @@ def configure(Device):
         print("Failed to set uncorrectable error severity register")
         return False
 
+    if set_register(Device, root_error_command_register, "L", root_error_command_value) == False:
+        print("Failed to set root error command register")
+        return False
+
     return True
 
 
@@ -188,6 +199,38 @@ def print_data(Device):
         print("Failed to read advanced error capabilities and control value")
         return false;
 
+    retval, value_root_error_status_register = read_register(Device, root_error_status_register, "L")
+
+    if retval == False:
+        print("Failed to read uncorrectable error status register")
+        return false;
+
+    if set_register(Device, root_error_status_register, "L", 0) == False:
+        print("Failed to clear uncorrectable error status register")
+        return false;
+
+    retval, value_correctable_error_source_id_register = read_register(Device, correctable_error_source_id_register, "W")
+
+    if retval == False:
+        print("Failed to read correctable error source id register")
+        return false;
+
+    retval, value_error_source_id_register = read_register(Device, Error_Source_ID_Register, "W")
+
+    if retval == False:
+        print("Failed to read error source id register")
+        return false;
+
+    retval, value_lane_err_status_reg = read_register(Device, lane_err_status_reg, "L")
+
+    if retval == False:
+        print("Failed to read lane error status register")
+        return false;
+
+    if set_register(Device, lane_err_status_reg, "L", 0) == False:
+        print("Failed to clear lane error status register")
+        return false;
+
     print(f" {datetime.datetime.now().time()}"
           f" {value_uncorrectable_error_status_register             :08X}"
           f" {value_correctable_error_status_register               :08X}"
@@ -195,10 +238,32 @@ def print_data(Device):
           f" {value_header_log_register_dword2                      :08X}"
           f" {value_header_log_register_dword3                      :08X}"
           f" {value_header_log_register_dword4                      :08X}"
-          f" {value_advanced_error_capabilities_and_control_value   :08X}")
+          f" {value_advanced_error_capabilities_and_control_value   :08X}"
+          f" {value_root_error_status_register                      :08X}"
+          f" {value_correctable_error_source_id_register            :04X}"
+          f" {value_error_source_id_register                        :04X}"
+          f" {value_lane_err_status_reg                             :08X}")
+
+    return True
 
 
 def main():
+    if len(sys.argv) != 2:
+        print("Missing parameters")
+        return -1
+
+    interval = 0
+
+    try:
+        interval = int(sys.argv[1])
+    except:
+        print("Invalid interval")
+        return -1
+    finally:
+        if interval <= 0:
+            print("Invalid interval")
+            return -1
+
     if verify_setpci_availability() == False:
         print("setpci not available")
         return -1
@@ -225,11 +290,12 @@ def main():
         next_run = time.monotonic()
 
         while True:
-            next_run += 1
+            next_run += interval
             time.sleep(max(0, next_run - time.monotonic()))
             print_data(device)
     except:
-        pass
+        print("Failed to set timer")
+        return -1
 
     return 0
 
