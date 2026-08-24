@@ -7,13 +7,14 @@ import sys
 import time
 
 
-uncorrectable_error_status_register                 = 0x0104        # Error Data
-correctable_error_status_register                   = 0x0110        # Error Data
-header_log_register_dword1                          = 0x011c        # Error Data
-header_log_register_dword2                          = 0x0120        # Error Data
-header_log_register_dword3                          = 0x0124        # Error Data
-header_log_register_dword4                          = 0x0128        # Error Data
-root_error_status_register                          = 0x0130        # Error Data
+uncorrectable_error_status_register                 = 0x0104
+correctable_error_status_register                   = 0x0110
+header_log_register_dword1                          = 0x011c
+header_log_register_dword2                          = 0x0120
+header_log_register_dword3                          = 0x0124
+header_log_register_dword4                          = 0x0128
+root_error_status_register                          = 0x0130
+correctable_error_source_id_register                = 0x0134
 
 uncorrectable_error_mask_register                   = 0x0108
 uncorrectable_error_severity_register               = 0x010c
@@ -206,6 +207,12 @@ def print_data(Device):
         print("Failed to clear uncorrectable error status register")
         return false;
 
+    retval, value_correctable_error_source_id_register = read_register(Device, correctable_error_source_id_register, "W")
+
+    if retval == False:
+        print("Failed to read uncorrectable error status register")
+        return false;
+
     print(f" {datetime.datetime.now().time()}"
           f" {value_uncorrectable_error_status_register             :08X}"
           f" {value_correctable_error_status_register               :08X}"
@@ -214,7 +221,8 @@ def print_data(Device):
           f" {value_header_log_register_dword3                      :08X}"
           f" {value_header_log_register_dword4                      :08X}"
           f" {value_advanced_error_capabilities_and_control_value   :08X}"
-          f" {value_root_error_status_register                      :04X}")
+          f" {value_root_error_status_register                      :04X}"
+          f" {value_correctable_error_source_id_register            :04X}")
 
 
 def main():
