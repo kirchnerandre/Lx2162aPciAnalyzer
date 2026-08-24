@@ -195,17 +195,17 @@ def print_data(Device):
     if retval == False:
         print("Failed to read advanced error capabilities and control value")
         return false;
-""" """
-    retval, value_root_error_status_register = read_register(Device, root_error_status_register, "L")
+
+    retval, value_root_error_status_register = read_register(Device, root_error_status_register, "W")
 
     if retval == False:
         print("Failed to read uncorrectable error status register")
         return false;
 
-    if set_register(Device, root_error_status_register, "L", 0) == False:
+    if set_register(Device, root_error_status_register, "W", 0) == False:
         print("Failed to clear uncorrectable error status register")
         return false;
-""" """
+
     print(f" {datetime.datetime.now().time()}"
           f" {value_uncorrectable_error_status_register             :08X}"
           f" {value_correctable_error_status_register               :08X}"
@@ -214,7 +214,7 @@ def print_data(Device):
           f" {value_header_log_register_dword3                      :08X}"
           f" {value_header_log_register_dword4                      :08X}"
           f" {value_advanced_error_capabilities_and_control_value   :08X}"
-          f" {value_root_error_status_register                      :08X}")
+          f" {value_root_error_status_register                      :04X}")
 
 
 def main():
