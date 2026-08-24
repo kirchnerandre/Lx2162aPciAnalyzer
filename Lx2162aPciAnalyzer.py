@@ -16,6 +16,7 @@ header_log_register_dword4                          = 0x0128
 root_error_status_register                          = 0x0130
 correctable_error_source_id_register                = 0x0134
 Error_Source_ID_Register                            = 0x0136
+lane_err_status_reg                                 = 0x0150
 
 uncorrectable_error_mask_register                   = 0x0108
 uncorrectable_error_severity_register               = 0x010c
@@ -220,6 +221,16 @@ def print_data(Device):
         print("Failed to read error source id register")
         return false;
 
+    retval, value_lane_err_status_reg = read_register(Device, lane_err_status_reg, "L")
+
+    if retval == False:
+        print("Failed to read lane error status register")
+        return false;
+
+    if set_register(Device, lane_err_status_reg, "L", 0) == False:
+        print("Failed to clear lane error status register")
+        return false;
+
     print(f" {datetime.datetime.now().time()}"
           f" {value_uncorrectable_error_status_register             :08X}"
           f" {value_correctable_error_status_register               :08X}"
@@ -230,7 +241,10 @@ def print_data(Device):
           f" {value_advanced_error_capabilities_and_control_value   :08X}"
           f" {value_root_error_status_register                      :08X}"
           f" {value_correctable_error_source_id_register            :04X}"
-          f" {value_error_source_id_register                        :04X}")
+          f" {value_error_source_id_register                        :04X}"
+          f" {value_lane_err_status_reg                             :08X}")
+
+    return True
 
 
 def main():
@@ -280,7 +294,8 @@ def main():
             time.sleep(max(0, next_run - time.monotonic()))
             print_data(device)
     except:
-        pass
+        print("Failed to set timer")
+        return -1
 
     return 0
 
