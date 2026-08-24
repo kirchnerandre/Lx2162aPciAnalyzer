@@ -231,20 +231,19 @@ def query_data(Device):
         print("Failed to clear lane error status register")
         return false;
 
-    print(f" {datetime.datetime.now().time()}"
-          f" {value_uncorrectable_error_status_register             :08X}"
-          f" {value_correctable_error_status_register               :08X}"
-          f" {value_header_log_register_dword1                      :08X}"
-          f" {value_header_log_register_dword2                      :08X}"
-          f" {value_header_log_register_dword3                      :08X}"
-          f" {value_header_log_register_dword4                      :08X}"
-          f" {value_advanced_error_capabilities_and_control_value   :08X}"
-          f" {value_root_error_status_register                      :08X}"
-          f" {value_correctable_error_source_id_register            :04X}"
-          f" {value_error_source_id_register                        :04X}"
-          f" {value_lane_error_status_register                      :08X}")
-
-    return True
+    return True,
+           datetime.datetime.now().time(),
+           value_uncorrectable_error_status_register,
+           value_correctable_error_status_register,
+           value_header_log_register_dword1,
+           value_header_log_register_dword2,
+           value_header_log_register_dword3,
+           value_header_log_register_dword4,
+           value_advanced_error_capabilities_and_control_value,
+           value_root_error_status_register,
+           value_correctable_error_source_id_register,
+           value_error_source_id_register,
+           value_lane_error_status_register
 
 
 def send_to_kusto(Datetime,
@@ -320,7 +319,34 @@ def main():
         while True:
             next_run += interval
             time.sleep(max(0, next_run - time.monotonic()))
-            query_data(device)
+
+            (retval,
+            date_time,
+            value_uncorrectable_error_status_register,
+            value_correctable_error_status_register,
+            value_header_log_register_dword1,
+            value_header_log_register_dword2,
+            value_header_log_register_dword3,
+            value_header_log_register_dword4,
+            value_advanced_error_capabilities_and_control_value,
+            value_root_error_status_register,
+            value_correctable_error_source_id_register,
+            value_error_source_id_register,
+            value_lane_error_status_register) = query_data(device)
+
+            send_to_kusto(
+                date_time,
+                value_uncorrectable_error_status_register,
+                value_correctable_error_status_register,
+                value_header_log_register_dword1,
+                value_header_log_register_dword2,
+                value_header_log_register_dword3,
+                value_header_log_register_dword4,
+                value_advanced_error_capabilities_and_control_value,
+                value_root_error_status_register,
+                value_correctable_error_source_id_register,
+                value_error_source_id_register,
+                value_lane_error_status_register)
     except:
         print("Failed to set timer")
         return -1
