@@ -15,8 +15,8 @@ header_log_register_dword3                          = 0x0124
 header_log_register_dword4                          = 0x0128
 root_error_status_register                          = 0x0130
 correctable_error_source_id_register                = 0x0134
-Error_Source_ID_Register                            = 0x0136
-lane_err_status_reg                                 = 0x0150
+error_source_id_register                            = 0x0136
+lane_error_status_register                          = 0x0150
 
 uncorrectable_error_mask_register                   = 0x0108
 uncorrectable_error_severity_register               = 0x010c
@@ -148,7 +148,7 @@ def configure(Device):
     return True
 
 
-def print_data(Device):
+def query_data(Device):
     retval, value_uncorrectable_error_status_register = read_register(Device, uncorrectable_error_status_register, "L")
 
     if retval == False:
@@ -215,19 +215,19 @@ def print_data(Device):
         print("Failed to read correctable error source id register")
         return false;
 
-    retval, value_error_source_id_register = read_register(Device, Error_Source_ID_Register, "W")
+    retval, value_error_source_id_register = read_register(Device, error_source_id_register, "W")
 
     if retval == False:
         print("Failed to read error source id register")
         return false;
 
-    retval, value_lane_err_status_reg = read_register(Device, lane_err_status_reg, "L")
+    retval, value_lane_error_status_register = read_register(Device, lane_error_status_register, "L")
 
     if retval == False:
         print("Failed to read lane error status register")
         return false;
 
-    if set_register(Device, lane_err_status_reg, "L", 0) == False:
+    if set_register(Device, lane_error_status_register, "L", 0) == False:
         print("Failed to clear lane error status register")
         return false;
 
@@ -242,7 +242,35 @@ def print_data(Device):
           f" {value_root_error_status_register                      :08X}"
           f" {value_correctable_error_source_id_register            :04X}"
           f" {value_error_source_id_register                        :04X}"
-          f" {value_lane_err_status_reg                             :08X}")
+          f" {value_lane_error_status_register                      :08X}")
+
+    return True
+
+
+def send_to_kusto(Datetime,
+                  ValueUncorrectableErrorStatusRegister,
+                  ValueCorrectableError_status_register,
+                  ValueHeaderLogRegisterDword1,
+                  ValueHeaderLogRegisterDword2,
+                  ValueHeaderLogRegisterDword3,
+                  ValueHeaderLogRegisterDword4,
+                  ValueAdvancedErrorCapabilitiesAndControlValue,
+                  ValueRootErrorStatusRegister,
+                  ValueCorrectableErrorSourceIdRegister,
+                  ValueErrorSourceIdRegister,
+                  ValueLaneErrorStatusRegister):
+    print(f" {Datetime}"
+          f" {ValueUncorrectableErrorStatusRegister         :08X}"
+          f" {ValueCorrectableError_status_register         :08X}"
+          f" {ValueHeaderLogRegisterDword1                  :08X}"
+          f" {ValueHeaderLogRegisterDword2                  :08X}"
+          f" {ValueHeaderLogRegisterDword3                  :08X}"
+          f" {ValueHeaderLogRegisterDword4                  :08X}"
+          f" {ValueAdvancedErrorCapabilitiesAndControlValue :08X}"
+          f" {ValueRootErrorStatusRegister                  :08X}"
+          f" {ValueCorrectableErrorSourceIdRegister         :04X}"
+          f" {ValueErrorSourceIdRegister                    :04X}"
+          f" {ValueLaneErrorStatusRegister                  :08X}")
 
     return True
 
@@ -292,7 +320,7 @@ def main():
         while True:
             next_run += interval
             time.sleep(max(0, next_run - time.monotonic()))
-            print_data(device)
+            query_data(device)
     except:
         print("Failed to set timer")
         return -1
