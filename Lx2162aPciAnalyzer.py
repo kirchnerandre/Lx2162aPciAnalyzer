@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 
 
+import azure.kusto.data
+import azure.kusto.ingest
 import datetime
+import io
+import json
+import os
 import subprocess
 import sys
 import time
 
+KUSTO_INGEST_URI                                    = "https://ingest-mycluster.eastus.kusto.windows.net"
+KUSTO_DATABASE                                      = "kirchnerandre-database"
+KUSTO_TABLE                                         = "kirchnerandre-table"
 
 uncorrectable_error_status_register                 = 0x0104
 correctable_error_status_register                   = 0x0110
