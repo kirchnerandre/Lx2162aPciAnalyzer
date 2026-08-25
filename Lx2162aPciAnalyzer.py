@@ -2,6 +2,7 @@
 
 
 import azure.kusto.data
+import azure.kusto.data.data_format
 import azure.kusto.ingest
 import csv
 import datetime
@@ -264,12 +265,12 @@ def send_to_kusto(Datetime,
                   ValueCorrectableErrorSourceIdRegister,
                   ValueErrorSourceIdRegister,
                   ValueLaneErrorStatusRegister):
-    cluster     = ( "https://ingest-kirchnerandre-cluster.southcentralus.kusto.windows.net")
-    database    = "kirchnerandre-database"
-    table       = "Lx2162aPciAnalyzer"
+    _cluster    = "https://ingest-kirchnerandre-cluster.southcentralus.kusto.windows.net"
+    _database   = "kirchnerandre-database"
+    _table      = "Lx2162aPciAnalyzer"
 
     try:
-        kcsb        = azure.kusto.data.KustoConnectionStringBuilder.with_az_cli_authentication(cluster)
+        kcsb        = azure.kusto.data.KustoConnectionStringBuilder.with_az_cli_authentication(_cluster)
         client      = azure.kusto.ingest.QueuedIngestClient(kcsb)
 
         row = [
@@ -293,17 +294,10 @@ def send_to_kusto(Datetime,
 
         stream = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
 
-        properties = azure.kusto.ingest.IngestionProperties(
-            database=DATABASE,
-            table=TABLE,
-            data_format=DataFormat.CSV,
-        )
+        properties = azure.kusto.ingest.IngestionProperties(database=_database, table=_table, data_format=azure.kusto.data.data_format.DataFormat.CSV,
 
-        client.ingest_from_stream(
-            StreamDescriptor(stream),
-            ingestion_properties=properties,
-        )
-    except Exception e:
+        client.ingest_from_stream(azure.kusto.ingest.StreamDescriptor(stream), ingestion_properties=properties,)
+    except Exception as e:
         print(e)
         return False
 
