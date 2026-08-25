@@ -3,6 +3,7 @@
 
 import azure.kusto.data
 import azure.kusto.ingest
+import csv
 import datetime
 import io
 import json
@@ -11,9 +12,6 @@ import subprocess
 import sys
 import time
 
-KUSTO_INGEST_URI                                    = "https://ingest-mycluster.eastus.kusto.windows.net"
-KUSTO_DATABASE                                      = "kirchnerandre-database"
-KUSTO_TABLE                                         = "kirchnerandre-table"
 
 uncorrectable_error_status_register                 = 0x0104
 correctable_error_status_register                   = 0x0110
@@ -266,18 +264,48 @@ def send_to_kusto(Datetime,
                   ValueCorrectableErrorSourceIdRegister,
                   ValueErrorSourceIdRegister,
                   ValueLaneErrorStatusRegister):
-    print(f" {Datetime}"
-          f" {ValueUncorrectableErrorStatusRegister         :08X}"
-          f" {ValueCorrectableError_status_register         :08X}"
-          f" {ValueHeaderLogRegisterDword1                  :08X}"
-          f" {ValueHeaderLogRegisterDword2                  :08X}"
-          f" {ValueHeaderLogRegisterDword3                  :08X}"
-          f" {ValueHeaderLogRegisterDword4                  :08X}"
-          f" {ValueAdvancedErrorCapabilitiesAndControlValue :08X}"
-          f" {ValueRootErrorStatusRegister                  :08X}"
-          f" {ValueCorrectableErrorSourceIdRegister         :04X}"
-          f" {ValueErrorSourceIdRegister                    :04X}"
-          f" {ValueLaneErrorStatusRegister                  :08X}")
+    cluster     = ( "https://ingest-kirchnerandre-cluster.southcentralus.kusto.windows.net")
+    database    = "kirchnerandre-database"
+    table       = "Lx2162aPciAnalyzer"
+
+    try:
+        kcsb        = azure.kusto.data.KustoConnectionStringBuilder.with_az_cli_authentication(cluster)
+        client      = azure.kusto.ingest.QueuedIngestClient(kcsb)
+
+        row = [
+            Datetime,
+            ValueUncorrectableErrorStatusRegister,
+            ValueCorrectableError_status_register,
+            ValueHeaderLogRegisterDword1,
+            ValueHeaderLogRegisterDword2,
+            ValueHeaderLogRegisterDword3,
+            ValueHeaderLogRegisterDword4,
+            ValueAdvancedErrorCapabilitiesAndControlValue,
+            ValueRootErrorStatusRegister,
+            ValueCorrectableErrorSourceIdRegister,
+            ValueErrorSourceIdRegister,
+            ValueLaneErrorStatusRegister
+        ]
+
+        csv_buffer = io.StringIO()
+
+        csv.writer(csv_buffer).writerow(row)
+
+        stream = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
+
+        properties = azure.kusto.ingest.IngestionProperties(
+            database=DATABASE,
+            table=TABLE,
+            data_format=DataFormat.CSV,
+        )
+
+        client.ingest_from_stream(
+            StreamDescriptor(stream),
+            ingestion_properties=properties,
+        )
+    except Exception e:
+        print(e)
+        return False
 
     return True
 
@@ -362,6 +390,19 @@ def main():
                    value_lane_error_status_register) == False:
                 print("Failed to send data top Kusto")
                 return -1
+
+            print(f" {date_time}"
+                  f" {value_uncorrectable_error_status_register             :08X}"
+                  f" {value_correctable_error_status_register               :08X}"
+                  f" {value_header_log_register_dword1                      :08X}"
+                  f" {value_header_log_register_dword2                      :08X}"
+                  f" {value_header_log_register_dword3                      :08X}"
+                  f" {value_header_log_register_dword4                      :08X}"
+                  f" {value_advanced_error_capabilities_and_control_value   :08X}"
+                  f" {value_root_error_status_register                      :08X}"
+                  f" {value_correctable_error_source_id_register            :08X}"
+                  f" {value_error_source_id_register                        :04X}"
+                  f" {value_lane_error_status_register                      :04X}")
     except:
         print("Failed to set timer")
         return -1
