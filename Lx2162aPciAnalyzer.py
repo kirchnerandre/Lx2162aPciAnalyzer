@@ -265,7 +265,7 @@ def send_to_kusto(Datetime,
                   ValueCorrectableErrorSourceIdRegister,
                   ValueErrorSourceIdRegister,
                   ValueLaneErrorStatusRegister):
-    _cluster    = "https://ingest-kirchnerandre-cluster.southcentralus.kusto.windows.net"
+    _cluster    = "https://ingest-kvc-g17c54juuue55kc9ay.southcentralus.kusto.windows.net"
     _database   = "kirchnerandre-database"
     _table      = "Lx2162aPciAnalyzer"
 
