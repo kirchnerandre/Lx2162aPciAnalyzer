@@ -253,21 +253,22 @@ def query_data(Device):
            value_lane_error_status_register
 
 
-def send_to_kusto(Datetime,
-                  ValueUncorrectableErrorStatusRegister,
-                  ValueCorrectableError_status_register,
-                  ValueHeaderLogRegisterDword1,
-                  ValueHeaderLogRegisterDword2,
-                  ValueHeaderLogRegisterDword3,
-                  ValueHeaderLogRegisterDword4,
-                  ValueAdvancedErrorCapabilitiesAndControlValue,
-                  ValueRootErrorStatusRegister,
-                  ValueCorrectableErrorSourceIdRegister,
-                  ValueErrorSourceIdRegister,
-                  ValueLaneErrorStatusRegister):
-    _cluster    = "https://ingest-kvc-g17c54juuue55kc9ay.southcentralus.kusto.windows.net"
-    _database   = "kirchnerandre-database"
-    _table      = "Lx2162aPciAnalyzer"
+def send_to_kusto_1(Datetime,
+                    ValueUncorrectableErrorStatusRegister,
+                    ValueCorrectableError_status_register,
+                    ValueHeaderLogRegisterDword1,
+                    ValueHeaderLogRegisterDword2,
+                    ValueHeaderLogRegisterDword3,
+                    ValueHeaderLogRegisterDword4,
+                    ValueAdvancedErrorCapabilitiesAndControlValue,
+                    ValueRootErrorStatusRegister,
+                    ValueCorrectableErrorSourceIdRegister,
+                    ValueErrorSourceIdRegister,
+                    ValueLaneErrorStatusRegister):
+
+    _cluster    =   "https://ingest-kvc-g17c54juuue55kc9ay.southcentralus.kusto.windows.net"
+    _database   =   "kirchnerandre-database"
+    _table      =   "Lx2162aPciAnalyzer"
 
     try:
         kcsb        = azure.kusto.data.KustoConnectionStringBuilder.with_az_cli_authentication(_cluster)
@@ -294,7 +295,113 @@ def send_to_kusto(Datetime,
 
         stream = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
 
-        properties = azure.kusto.ingest.IngestionProperties(database=_database, table=_table, data_format=azure.kusto.data.data_format.DataFormat.CSV,
+        properties = azure.kusto.ingest.IngestionProperties(database=_database, table=_table, data_format=azure.kusto.data.data_format.DataFormat.CSV,)
+
+        client.ingest_from_stream(azure.kusto.ingest.StreamDescriptor(stream), ingestion_properties=properties,)
+    except Exception as e:
+        print(e)
+        return False
+
+    return True
+
+
+def send_to_kusto_2(Datetime,
+                    ValueUncorrectableErrorStatusRegister,
+                    ValueCorrectableError_status_register,
+                    ValueHeaderLogRegisterDword1,
+                    ValueHeaderLogRegisterDword2,
+                    ValueHeaderLogRegisterDword3,
+                    ValueHeaderLogRegisterDword4,
+                    ValueAdvancedErrorCapabilitiesAndControlValue,
+                    ValueRootErrorStatusRegister,
+                    ValueCorrectableErrorSourceIdRegister,
+                    ValueErrorSourceIdRegister,
+                    ValueLaneErrorStatusRegister):
+
+    _cluster    =   "https://ingest-kvc-g17c54juuue55kc9ay.southcentralus.kusto.windows.net"
+    _database   =   "kirchnerandre-database"
+    _table      =   "Lx2162aPciAnalyzer"
+
+    try:
+        kcsb = azure.kusto.data.KustoConnectionStringBuilder.with_aad_managed_service_identity_authentication(_cluster)
+
+        client = azure.kusto.ingest.QueuedIngestClient(kcsb)
+
+        row = [
+            Datetime,
+            ValueUncorrectableErrorStatusRegister,
+            ValueCorrectableError_status_register,
+            ValueHeaderLogRegisterDword1,
+            ValueHeaderLogRegisterDword2,
+            ValueHeaderLogRegisterDword3,
+            ValueHeaderLogRegisterDword4,
+            ValueAdvancedErrorCapabilitiesAndControlValue,
+            ValueRootErrorStatusRegister,
+            ValueCorrectableErrorSourceIdRegister,
+            ValueErrorSourceIdRegister,
+            ValueLaneErrorStatusRegister
+        ]
+
+        csv_buffer = io.StringIO()
+
+        csv.writer(csv_buffer).writerow(row)
+
+        stream = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
+
+        properties = azure.kusto.ingest.IngestionProperties(database=_database, table=_table, data_format=azure.kusto.data.data_format.DataFormat.CSV,)
+
+        client.ingest_from_stream(azure.kusto.ingest.StreamDescriptor(stream), ingestion_properties=properties,)
+    except Exception as e:
+        print(e)
+        return False
+
+    return True
+
+
+def send_to_kusto_3(Datetime,
+                    ValueUncorrectableErrorStatusRegister,
+                    ValueCorrectableError_status_register,
+                    ValueHeaderLogRegisterDword1,
+                    ValueHeaderLogRegisterDword2,
+                    ValueHeaderLogRegisterDword3,
+                    ValueHeaderLogRegisterDword4,
+                    ValueAdvancedErrorCapabilitiesAndControlValue,
+                    ValueRootErrorStatusRegister,
+                    ValueCorrectableErrorSourceIdRegister,
+                    ValueErrorSourceIdRegister,
+                    ValueLaneErrorStatusRegister):
+
+    _cluster    =   "https://ingest-kvc-g17c54juuue55kc9ay.southcentralus.kusto.windows.net"
+    _database   =   "kirchnerandre-database"
+    _table      =   "Lx2162aPciAnalyzer"
+
+    try:
+        kcsb = azure.kusto.data.KustoConnectionStringBuilder.with_aad_managed_service_identity_authentication(_cluster)
+
+        client = azure.kusto.ingest.QueuedIngestClient(kcsb)
+
+        row = [
+            Datetime,
+            ValueUncorrectableErrorStatusRegister,
+            ValueCorrectableError_status_register,
+            ValueHeaderLogRegisterDword1,
+            ValueHeaderLogRegisterDword2,
+            ValueHeaderLogRegisterDword3,
+            ValueHeaderLogRegisterDword4,
+            ValueAdvancedErrorCapabilitiesAndControlValue,
+            ValueRootErrorStatusRegister,
+            ValueCorrectableErrorSourceIdRegister,
+            ValueErrorSourceIdRegister,
+            ValueLaneErrorStatusRegister
+        ]
+
+        csv_buffer = io.StringIO()
+
+        csv.writer(csv_buffer).writerow(row)
+
+        stream = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
+
+        properties = azure.kusto.ingest.IngestionProperties(database=_database, table=_table, data_format=azure.kusto.data.data_format.DataFormat.CSV,)
 
         client.ingest_from_stream(azure.kusto.ingest.StreamDescriptor(stream), ingestion_properties=properties,)
     except Exception as e:
@@ -369,7 +476,7 @@ def main():
                 print("Failed to collect data")
                 return -1
 
-            if send_to_kusto(
+            if send_to_kusto_2(
                    date_time,
                    value_uncorrectable_error_status_register,
                    value_correctable_error_status_register,
