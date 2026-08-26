@@ -13,10 +13,7 @@ def main():
 
     token = credential.get_token("https://kusto.kusto.windows.net/.default")
 
-    print()
-    print("ACCESS TOKEN:")
     print(token.token)
-    print()
 
 
 if __name__ == "__main__":
