@@ -238,33 +238,36 @@ def query_data(Device):
         print("Failed to clear lane error status register")
         return false;
 
-    return True,
-           datetime.datetime.now().time(),
-           value_uncorrectable_error_status_register,
-           value_correctable_error_status_register,
-           value_header_log_register_dword1,
-           value_header_log_register_dword2,
-           value_header_log_register_dword3,
-           value_header_log_register_dword4,
-           value_advanced_error_capabilities_and_control_value,
-           value_root_error_status_register,
-           value_correctable_error_source_id_register,
-           value_error_source_id_register,
-           value_lane_error_status_register
+    return (
+        True,
+        datetime.datetime.now().time(),
+        value_uncorrectable_error_status_register,
+        value_correctable_error_status_register,
+        value_header_log_register_dword1,
+        value_header_log_register_dword2,
+        value_header_log_register_dword3,
+        value_header_log_register_dword4,
+        value_advanced_error_capabilities_and_control_value,
+        value_root_error_status_register,
+        value_correctable_error_source_id_register,
+        value_error_source_id_register,
+        value_lane_error_status_register)
 
 
-def send_to_kusto(Datetime,
-                  ValueUncorrectableErrorStatusRegister,
-                  ValueCorrectableError_status_register,
-                  ValueHeaderLogRegisterDword1,
-                  ValueHeaderLogRegisterDword2,
-                  ValueHeaderLogRegisterDword3,
-                  ValueHeaderLogRegisterDword4,
-                  ValueAdvancedErrorCapabilitiesAndControlValue,
-                  ValueRootErrorStatusRegister,
-                  ValueCorrectableErrorSourceIdRegister,
-                  ValueErrorSourceIdRegister,
-                  ValueLaneErrorStatusRegister):
+def send_to_kusto(
+    Datetime,
+    ValueUncorrectableErrorStatusRegister,
+    ValueCorrectableError_status_register,
+    ValueHeaderLogRegisterDword1,
+    ValueHeaderLogRegisterDword2,
+    ValueHeaderLogRegisterDword3,
+    ValueHeaderLogRegisterDword4,
+    ValueAdvancedErrorCapabilitiesAndControlValue,
+    ValueRootErrorStatusRegister,
+    ValueCorrectableErrorSourceIdRegister,
+    ValueErrorSourceIdRegister,
+    ValueLaneErrorStatusRegister):
+
     _cluster    = "https://ingest-kvc-g17c54juuue55kc9ay.southcentralus.kusto.windows.net"
     _database   = "kirchnerandre-database"
     _table      = "Lx2162aPciAnalyzer"
@@ -294,7 +297,7 @@ def send_to_kusto(Datetime,
 
         stream = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
 
-        properties = azure.kusto.ingest.IngestionProperties(database=_database, table=_table, data_format=azure.kusto.data.data_format.DataFormat.CSV,
+        properties = azure.kusto.ingest.IngestionProperties(database=_database, table=_table, data_format=azure.kusto.data.data_format.DataFormat.CSV,)
 
         client.ingest_from_stream(azure.kusto.ingest.StreamDescriptor(stream), ingestion_properties=properties,)
     except Exception as e:
