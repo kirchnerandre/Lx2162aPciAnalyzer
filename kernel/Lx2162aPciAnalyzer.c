@@ -30,7 +30,7 @@ struct bar_register
 };
 
 
-struct mypci_dev
+struct lx2162a_pci_device
 {
     struct pci_dev*     pdev;
     void __iomem*       bar;
@@ -46,10 +46,11 @@ static struct class* mypci_class;
 
 static int lx2162a_pci_analyzer_open(struct inode* inode, struct file* file)
 {
-    struct mypci_dev* dev;
+    struct lx2162a_pci_device* dev;
 
-    dev = container_of(inode->i_cdev,
-        struct mypci_dev,
+    dev = container_of(
+        inode->i_cdev,
+        struct lx2162a_pci_device,
         cdev);
 
     file->private_data = dev;
@@ -66,8 +67,8 @@ static int lx2162a_pci_analyzer_release(struct inode* inode, struct file* file)
 
 static long lx2162a_pci_analyzer_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 {
-    struct mypci_dev*   dev = file->private_data;
-    struct bar_register bar_register;
+    struct lx2162a_pci_device*  dev             = file->private_data;
+    struct bar_register         bar_register;
 
     if (!dev)
     {
@@ -140,8 +141,8 @@ static const struct file_operations mypci_fops =
 
 static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_device_id* id)
 {
-    struct mypci_dev* dev;
-    int ret;
+    struct lx2162a_pci_device*  dev;
+    int                         ret;
 
     dev_info(&pdev->dev, "my_pci: device found: %04x:%04x\n", pdev->vendor, pdev->device);
 
@@ -260,7 +261,7 @@ err_release_region:
 
 static void lx2162a_pci_analyzer_remove(struct pci_dev* pdev)
 {
-    struct mypci_dev* dev;
+    struct lx2162a_pci_device* dev;
 
     dev = pci_get_drvdata(pdev);
 
