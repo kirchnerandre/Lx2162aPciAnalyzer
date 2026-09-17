@@ -32,13 +32,13 @@ struct bar_register
 
 struct lx2162a_pci_device
 {
-    struct pci_dev*     pdev;
-    void __iomem*       bar;
-    resource_size_t     bar_start;
-    resource_size_t     bar_size;
+    struct pci_dev*     PDev;
+    void __iomem*       Bar;
+    resource_size_t     BarStart;
+    resource_size_t     BarSize;
     dev_t               devt;
     struct cdev         cdev;
-    struct device*      device;
+    struct device*      Device;
 };
 
 
@@ -89,12 +89,12 @@ static long lx2162a_pci_analyzer_ioctl(struct file* File, unsigned int Command, 
             return -EINVAL;
         }
 
-        if ((resource_size_t)bar_register.offset + sizeof(u32) > device->bar_size)
+        if ((resource_size_t)bar_register.offset + sizeof(u32) > device->BarSize)
         {
             return -EINVAL;
         }
 
-        bar_register.value = ioread32(device->bar + bar_register.offset);
+        bar_register.value = ioread32(device->Bar + bar_register.offset);
 
         if (copy_to_user((void __user*)Arg, &bar_register, sizeof(bar_register)))
         {
@@ -114,14 +114,14 @@ static long lx2162a_pci_analyzer_ioctl(struct file* File, unsigned int Command, 
             return -EINVAL;
         }
 
-        if ((resource_size_t)bar_register.offset + sizeof(u32) > device->bar_size)
+        if ((resource_size_t)bar_register.offset + sizeof(u32) > device->BarSize)
         {
             return -EINVAL;
         }
 
-        iowrite32(bar_register.value, device->bar + bar_register.offset);
+        iowrite32(bar_register.value, device->Bar + bar_register.offset);
 
-        readl(device->bar + bar_register.offset);
+        readl(device->Bar + bar_register.offset);
 
         return 0;
 
@@ -173,14 +173,14 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
         goto err_release_region;
     }
 
-    device->pdev = PDev;
+    device->PDev = PDev;
 
-    device->bar_start   = pci_resource_start(PDev, LX2162A_PCI_BAR);
-    device->bar_size    = pci_resource_len  (PDev, LX2162A_PCI_BAR);
+    device->BarStart    = pci_resource_start(PDev, LX2162A_PCI_BAR);
+    device->BarSize     = pci_resource_len  (PDev, LX2162A_PCI_BAR);
 
-    dev_info(&PDev->dev, "BAR%d start = 0x%llx\n", LX2162A_PCI_BAR, (unsigned long long)device->bar_start);
+    dev_info(&PDev->dev, "BAR%d start = 0x%llx\n", LX2162A_PCI_BAR, (unsigned long long)device->BarStart);
 
-    dev_info(&PDev->dev, "BAR%d size  = 0x%llx (%llu bytes)\n", LX2162A_PCI_BAR, (unsigned long long)device->bar_size, (unsigned long long)device->bar_size);
+    dev_info(&PDev->dev, "BAR%d size  = 0x%llx (%llu bytes)\n", LX2162A_PCI_BAR, (unsigned long long)device->BarSize, (unsigned long long)device->BarSize);
 
     if (!(pci_resource_flags(PDev, LX2162A_PCI_BAR) & IORESOURCE_MEM))
     {
@@ -190,9 +190,9 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
         goto err_free;
     }
 
-    device->bar = pci_iomap(PDev, LX2162A_PCI_BAR, 0);
+    device->Bar = pci_iomap(PDev, LX2162A_PCI_BAR, 0);
 
-    if (!device->bar)
+    if (!device->Bar)
     {
         dev_err(&PDev->dev, "pci_iomap() failed\n");
 
@@ -200,7 +200,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
         goto err_free;
     }
 
-    dev_info(&PDev->dev, "BAR%d mapped at %p\n", LX2162A_PCI_BAR, device->bar);
+    dev_info(&PDev->dev, "BAR%d mapped at %p\n", LX2162A_PCI_BAR, device->Bar);
 
     ret_val = alloc_chrdev_region(&device->devt, 0, 1, DEVICE_NAME);
 
@@ -222,11 +222,11 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
         goto err_unregister;
     }
 
-    device->device = device_create(lx2162a_pci_class, &PDev->dev, device->devt, device, DEVICE_NAME);
+    device->Device = device_create(lx2162a_pci_class, &PDev->dev, device->devt, device, DEVICE_NAME);
 
-    if (IS_ERR(device->device))
+    if (IS_ERR(device->Device))
     {
-        ret_val = PTR_ERR(device->device);
+        ret_val = PTR_ERR(device->Device);
 
         dev_err(&PDev->dev, "device_create() failed: %d\n", ret_val);
 
@@ -247,7 +247,7 @@ err_unregister:
     unregister_chrdev_region(device->devt, 1);
 
 err_unmap:
-    pci_iounmap(PDev, device->bar);
+    pci_iounmap(PDev, device->Bar);
 
 err_free:
     kfree(device);
@@ -279,9 +279,9 @@ static void lx2162a_pci_analyzer_remove(struct pci_dev* PDev)
 
     unregister_chrdev_region(device->devt, 1);
 
-    if (device->bar)
+    if (device->Bar)
     {
-        pci_iounmap(PDev, device->bar);
+        pci_iounmap(PDev, device->Bar);
     }
 
     pci_release_region(PDev, LX2162A_PCI_BAR);
