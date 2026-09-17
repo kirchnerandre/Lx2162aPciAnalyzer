@@ -151,7 +151,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
 
     if (retval)
     {
-        dev_err(&PDev->dev, "pci_enable_device() failed: %d\n", retval);
+        dev_err(&PDev->dev, "Lx2162aPciAnalyzer: pci_enable_device() failed: %d\n", retval);
         return retval;
     }
 
@@ -159,7 +159,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
 
     if (retval)
     {
-        dev_err(&PDev->dev, "pci_request_region() failed: %d\n", retval);
+        dev_err(&PDev->dev, "Lx2162aPciAnalyzer: pci_request_region() failed: %d\n", retval);
 
         pci_disable_device(PDev);
         return retval;
@@ -178,13 +178,13 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
     device->BarStart    = pci_resource_start(PDev, LX2162A_PCI_BAR);
     device->BarSize     = pci_resource_len  (PDev, LX2162A_PCI_BAR);
 
-    dev_info(&PDev->dev, "BAR%d start = 0x%llx\n", LX2162A_PCI_BAR, (unsigned long long)device->BarStart);
+    dev_info(&PDev->dev, "Lx2162aPciAnalyzer: BAR%d start = 0x%llx\n", LX2162A_PCI_BAR, (unsigned long long)device->BarStart);
 
-    dev_info(&PDev->dev, "BAR%d size  = 0x%llx (%llu bytes)\n", LX2162A_PCI_BAR, (unsigned long long)device->BarSize, (unsigned long long)device->BarSize);
+    dev_info(&PDev->dev, "Lx2162aPciAnalyzer: BAR%d size  = 0x%llx (%llu bytes)\n", LX2162A_PCI_BAR, (unsigned long long)device->BarSize, (unsigned long long)device->BarSize);
 
     if (!(pci_resource_flags(PDev, LX2162A_PCI_BAR) & IORESOURCE_MEM))
     {
-        dev_err(&PDev->dev, "BAR%d is not a memory BAR\n", LX2162A_PCI_BAR);
+        dev_err(&PDev->dev, "Lx2162aPciAnalyzer: BAR%d is not a memory BAR\n", LX2162A_PCI_BAR);
 
         retval = -ENODEV;
         goto err_free;
@@ -194,19 +194,19 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
 
     if (!device->Bar)
     {
-        dev_err(&PDev->dev, "pci_iomap() failed\n");
+        dev_err(&PDev->dev, "Lx2162aPciAnalyzer: pci_iomap() failed\n");
 
         retval = -ENOMEM;
         goto err_free;
     }
 
-    dev_info(&PDev->dev, "BAR%d mapped at %p\n", LX2162A_PCI_BAR, device->Bar);
+    dev_info(&PDev->dev, "Lx2162aPciAnalyzer: BAR%d mapped at %p\n", LX2162A_PCI_BAR, device->Bar);
 
     retval = alloc_chrdev_region(&device->DevT, 0, 1, DEVICE_NAME);
 
     if (retval)
     {
-        dev_err(&PDev->dev, "alloc_chrdev_region() failed: %d\n", retval);
+        dev_err(&PDev->dev, "Lx2162aPciAnalyzer: alloc_chrdev_region() failed: %d\n", retval);
         goto err_unmap;
     }
 
@@ -218,7 +218,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
 
     if (retval)
     {
-        dev_err(&PDev->dev, "cdev_add() failed: %d\n", retval);
+        dev_err(&PDev->dev, "Lx2162aPciAnalyzer: cdev_add() failed: %d\n", retval);
         goto err_unregister;
     }
 
@@ -228,7 +228,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* PDev, const struct pci_dev
     {
         retval = PTR_ERR(device->Device);
 
-        dev_err(&PDev->dev, "device_create() failed: %d\n", retval);
+        dev_err(&PDev->dev, "Lx2162aPciAnalyzer: device_create() failed: %d\n", retval);
 
         goto err_cdev;
     }
@@ -270,7 +270,7 @@ static void lx2162a_pci_analyzer_remove(struct pci_dev* PDev)
         return;
     }
 
-    dev_info(&PDev->dev, "removing Lx2162aPciAnalyzer driver\n");
+    dev_info(&PDev->dev, "Lx2162aPciAnalyzer: removing Lx2162aPciAnalyzer driver\n");
 
     device_destroy(lx2162a_pci_class, device->DevT);
 
