@@ -262,33 +262,33 @@ err_release_region:
 
 static void lx2162a_pci_analyzer_remove(struct pci_dev* pdev)
 {
-    struct lx2162a_pci_device* dev;
+    struct lx2162a_pci_device* device;
 
-    dev = pci_get_drvdata(pdev);
+    device = pci_get_drvdata(pdev);
 
-    if (!dev)
+    if (!device)
     {
         return;
     }
 
     dev_info(&pdev->dev, "removing Lx2162aPciAnalyzer driver\n");
 
-    device_destroy(lx2162a_pci_class, dev->devt);
+    device_destroy(lx2162a_pci_class, device->devt);
 
-    cdev_del(&dev->cdev);
+    cdev_del(&device->cdev);
 
-    unregister_chrdev_region(dev->devt, 1);
+    unregister_chrdev_region(device->devt, 1);
 
-    if (dev->bar)
+    if (device->bar)
     {
-        pci_iounmap(pdev, dev->bar);
+        pci_iounmap(pdev, device->bar);
     }
 
     pci_release_region(pdev, LX2162A_PCI_BAR);
 
     pci_disable_device(pdev);
 
-    kfree(dev);
+    kfree(device);
 }
 
 
