@@ -142,7 +142,7 @@ static const struct file_operations lx2162a_pci_fops =
 
 static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_device_id* id)
 {
-    struct lx2162a_pci_device*  dev;
+    struct lx2162a_pci_device*  device;
     int                         ret;
 
     dev_info(&pdev->dev, "Lx2162aPciAnalyzer: device found: %04x:%04x\n", pdev->vendor, pdev->device);
@@ -165,22 +165,22 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
         return ret;
     }
 
-    dev = kzalloc(sizeof(*dev), GFP_KERNEL);
+    device = kzalloc(sizeof(*device), GFP_KERNEL);
 
-    if (!dev)
+    if (!device)
     {
         ret = -ENOMEM;
         goto err_release_region;
     }
 
-    dev->pdev = pdev;
+    device->pdev = pdev;
 
-    dev->bar_start  = pci_resource_start(pdev, LX2162A_PCI_BAR);
-    dev->bar_size   = pci_resource_len  (pdev, LX2162A_PCI_BAR);
+    device->bar_start   = pci_resource_start(pdev, LX2162A_PCI_BAR);
+    device->bar_size    = pci_resource_len  (pdev, LX2162A_PCI_BAR);
 
-    dev_info(&pdev->dev, "BAR%d start = 0x%llx\n", LX2162A_PCI_BAR, (unsigned long long)dev->bar_start);
+    dev_info(&pdev->dev, "BAR%d start = 0x%llx\n", LX2162A_PCI_BAR, (unsigned long long)device->bar_start);
 
-    dev_info(&pdev->dev, "BAR%d size  = 0x%llx (%llu bytes)\n", LX2162A_PCI_BAR, (unsigned long long)dev->bar_size, (unsigned long long)dev->bar_size);
+    dev_info(&pdev->dev, "BAR%d size  = 0x%llx (%llu bytes)\n", LX2162A_PCI_BAR, (unsigned long long)device->bar_size, (unsigned long long)device->bar_size);
 
     if (!(pci_resource_flags(pdev, LX2162A_PCI_BAR) & IORESOURCE_MEM))
     {
@@ -190,9 +190,9 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
         goto err_free;
     }
 
-    dev->bar = pci_iomap(pdev, LX2162A_PCI_BAR, 0);
+    device->bar = pci_iomap(pdev, LX2162A_PCI_BAR, 0);
 
-    if (!dev->bar)
+    if (!device->bar)
     {
         dev_err(&pdev->dev, "pci_iomap() failed\n");
 
@@ -200,9 +200,9 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
         goto err_free;
     }
 
-    dev_info(&pdev->dev, "BAR%d mapped at %p\n", LX2162A_PCI_BAR, dev->bar);
+    dev_info(&pdev->dev, "BAR%d mapped at %p\n", LX2162A_PCI_BAR, device->bar);
 
-    ret = alloc_chrdev_region(&dev->devt, 0, 1, DEVICE_NAME);
+    ret = alloc_chrdev_region(&device->devt, 0, 1, DEVICE_NAME);
 
     if (ret)
     {
@@ -210,11 +210,11 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
         goto err_unmap;
     }
 
-    cdev_init(&dev->cdev, &lx2162a_pci_fops);
+    cdev_init(&device->cdev, &lx2162a_pci_fops);
 
-    dev->cdev.owner = THIS_MODULE;
+    device->cdev.owner = THIS_MODULE;
 
-    ret = cdev_add(&dev->cdev, dev->devt, 1);
+    ret = cdev_add(&device->cdev, device->devt, 1);
 
     if (ret)
     {
@@ -222,18 +222,18 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
         goto err_unregister;
     }
 
-    dev->device = device_create(lx2162a_pci_class, &pdev->dev, dev->devt, dev, DEVICE_NAME);
+    device->device = device_create(lx2162a_pci_class, &pdev->dev, device->devt, device, DEVICE_NAME);
 
-    if (IS_ERR(dev->device))
+    if (IS_ERR(device->device))
     {
-        ret = PTR_ERR(dev->device);
+        ret = PTR_ERR(device->device);
 
         dev_err(&pdev->dev, "device_create() failed: %d\n", ret);
 
         goto err_cdev;
     }
 
-    pci_set_drvdata(pdev, dev);
+    pci_set_drvdata(pdev, device);
 
     dev_info(&pdev->dev, "Lx2162aPciAnalyzer driver loaded successfully\n");
 
@@ -241,16 +241,16 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
 
 
 err_cdev:
-    cdev_del(&dev->cdev);
+    cdev_del(&device->cdev);
 
 err_unregister:
-    unregister_chrdev_region(dev->devt, 1);
+    unregister_chrdev_region(device->devt, 1);
 
 err_unmap:
-    pci_iounmap(pdev, dev->bar);
+    pci_iounmap(pdev, device->bar);
 
 err_free:
-    kfree(dev);
+    kfree(device);
 
 err_release_region:
     pci_release_region(pdev, LX2162A_PCI_BAR);
