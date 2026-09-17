@@ -19,11 +19,11 @@
 #define LX2162A_PCI_MAGIC        'M'
 
 
-#define MYPCI_READ_REG  _IOWR(LX2162A_PCI_MAGIC, 0, struct mypci_reg)
-#define MYPCI_WRITE_REG _IOW (LX2162A_PCI_MAGIC, 1, struct mypci_reg)
+#define MYPCI_READ_REG  _IOWR(LX2162A_PCI_MAGIC, 0, struct bar_register)
+#define MYPCI_WRITE_REG _IOW (LX2162A_PCI_MAGIC, 1, struct bar_register)
 
 
-struct mypci_reg
+struct bar_register
 {
     __u32 offset;
     __u32 value;
@@ -44,7 +44,7 @@ struct mypci_dev
 static struct class* mypci_class;
 
 
-static int mypci_open(struct inode* inode, struct file* file)
+static int lx2162a_pci_analyzer_open(struct inode* inode, struct file* file)
 {
     struct mypci_dev* dev;
 
@@ -58,16 +58,16 @@ static int mypci_open(struct inode* inode, struct file* file)
 }
 
 
-static int mypci_release(struct inode* inode, struct file* file)
+static int lx2162a_pci_analyzer_release(struct inode* inode, struct file* file)
 {
     return 0;
 }
 
 
-static long mypci_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
+static long lx2162a_pci_analyzer_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 {
-    struct mypci_dev* dev = file->private_data;
-    struct mypci_reg reg;
+    struct mypci_dev*   dev = file->private_data;
+    struct bar_register bar_register;
 
     if (!dev)
     {
@@ -77,24 +77,24 @@ static long mypci_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
     switch (cmd)
     {
     case MYPCI_READ_REG:
-        if (copy_from_user(&reg, (void __user*)arg, sizeof(reg)))
+        if (copy_from_user(&bar_register, (void __user*)arg, sizeof(bar_register)))
         {
             return -EFAULT;
         }
 
-        if (reg.offset & 0x3)
+        if (bar_register.offset & 0x3)
         {
             return -EINVAL;
         }
 
-        if ((resource_size_t)reg.offset + sizeof(u32) > dev->bar_size)
+        if ((resource_size_t)bar_register.offset + sizeof(u32) > dev->bar_size)
         {
             return -EINVAL;
         }
 
-        reg.value = ioread32(dev->bar + reg.offset);
+        bar_register.value = ioread32(dev->bar + bar_register.offset);
 
-        if (copy_to_user((void __user*)arg, &reg, sizeof(reg)))
+        if (copy_to_user((void __user*)arg, &bar_register, sizeof(bar_register)))
         {
             return -EFAULT;
         }
@@ -102,24 +102,24 @@ static long mypci_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
         return 0;
 
     case MYPCI_WRITE_REG:
-        if (copy_from_user(&reg, (void __user*)arg, sizeof(reg)))
+        if (copy_from_user(&bar_register, (void __user*)arg, sizeof(bar_register)))
         {
             return -EFAULT;
         }
 
-        if (reg.offset & 0x3)
+        if (bar_register.offset & 0x3)
         {
             return -EINVAL;
         }
 
-        if ((resource_size_t)reg.offset + sizeof(u32) > dev->bar_size)
+        if ((resource_size_t)bar_register.offset + sizeof(u32) > dev->bar_size)
         {
             return -EINVAL;
         }
 
-        iowrite32(reg.value, dev->bar + reg.offset);
+        iowrite32(bar_register.value, dev->bar + bar_register.offset);
 
-        readl(dev->bar + reg.offset);
+        readl(dev->bar + bar_register.offset);
 
         return 0;
 
@@ -132,13 +132,13 @@ static long mypci_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 static const struct file_operations mypci_fops =
 {
     .owner              = THIS_MODULE,
-    .open               = mypci_open,
-    .release            = mypci_release,
-    .unlocked_ioctl     = mypci_ioctl,
+    .open               = lx2162a_pci_analyzer_open,
+    .release            = lx2162a_pci_analyzer_release,
+    .unlocked_ioctl     = lx2162a_pci_analyzer_ioctl,
 };
 
 
-static int mypci_probe(struct pci_dev* pdev, const struct pci_device_id* id)
+static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_device_id* id)
 {
     struct mypci_dev* dev;
     int ret;
@@ -258,7 +258,7 @@ err_release_region:
 }
 
 
-static void mypci_remove(struct pci_dev* pdev)
+static void lx2162a_pci_analyzer_remove(struct pci_dev* pdev)
 {
     struct mypci_dev* dev;
 
@@ -307,8 +307,8 @@ static struct pci_driver mypci_driver =
     .name       = DRIVER_NAME,
     .id_table   = mypci_ids,
 
-    .probe      = mypci_probe,
-    .remove     = mypci_remove,
+    .probe      = lx2162a_pci_analyzer_probe,
+    .remove     = lx2162a_pci_analyzer_remove,
 };
 
 
