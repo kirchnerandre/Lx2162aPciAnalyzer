@@ -13,10 +13,14 @@
 #define DEVICE_NAME "Lx2162aPciAnalyzer"
 
 
-#define MY_PCI_VENDOR_ID    0x1234
-#define MY_PCI_DEVICE_ID    0x5678
-#define MY_PCI_BAR          0
-#define MYPCI_MAGIC         'M'
+#define LX2162A_PCI_VENDOR_ID    0x1234
+#define LX2162A_PCI_DEVICE_ID    0x5678
+#define LX2162A_PCI_BAR          0
+#define LX2162A_PCI_MAGIC        'M'
+
+
+#define MYPCI_READ_REG  _IOWR(LX2162A_PCI_MAGIC, 0, struct mypci_reg)
+#define MYPCI_WRITE_REG _IOW (LX2162A_PCI_MAGIC, 1, struct mypci_reg)
 
 
 struct mypci_reg
@@ -24,11 +28,6 @@ struct mypci_reg
     __u32 offset;
     __u32 value;
 };
-
-
-#define MYPCI_READ_REG  _IOWR(MYPCI_MAGIC, 0, struct mypci_reg)
-
-#define MYPCI_WRITE_REG _IOW(MYPCI_MAGIC,  1, struct mypci_reg)
 
 
 struct mypci_dev
@@ -154,7 +153,7 @@ static int mypci_probe(struct pci_dev* pdev, const struct pci_device_id* id)
         return ret;
     }
 
-    ret = pci_request_region(pdev, MY_PCI_BAR, DRIVER_NAME);
+    ret = pci_request_region(pdev, LX2162A_PCI_BAR, DRIVER_NAME);
 
     if (ret)
     {
@@ -174,22 +173,22 @@ static int mypci_probe(struct pci_dev* pdev, const struct pci_device_id* id)
 
     dev->pdev = pdev;
 
-    dev->bar_start  = pci_resource_start(pdev, MY_PCI_BAR);
-    dev->bar_size   = pci_resource_len  (pdev, MY_PCI_BAR);
+    dev->bar_start  = pci_resource_start(pdev, LX2162A_PCI_BAR);
+    dev->bar_size   = pci_resource_len  (pdev, LX2162A_PCI_BAR);
 
-    dev_info(&pdev->dev, "BAR%d start = 0x%llx\n", MY_PCI_BAR, (unsigned long long)dev->bar_start);
+    dev_info(&pdev->dev, "BAR%d start = 0x%llx\n", LX2162A_PCI_BAR, (unsigned long long)dev->bar_start);
 
-    dev_info(&pdev->dev, "BAR%d size  = 0x%llx (%llu bytes)\n", MY_PCI_BAR, (unsigned long long)dev->bar_size, (unsigned long long)dev->bar_size);
+    dev_info(&pdev->dev, "BAR%d size  = 0x%llx (%llu bytes)\n", LX2162A_PCI_BAR, (unsigned long long)dev->bar_size, (unsigned long long)dev->bar_size);
 
-    if (!(pci_resource_flags(pdev, MY_PCI_BAR) & IORESOURCE_MEM))
+    if (!(pci_resource_flags(pdev, LX2162A_PCI_BAR) & IORESOURCE_MEM))
     {
-        dev_err(&pdev->dev, "BAR%d is not a memory BAR\n", MY_PCI_BAR);
+        dev_err(&pdev->dev, "BAR%d is not a memory BAR\n", LX2162A_PCI_BAR);
 
         ret = -ENODEV;
         goto err_free;
     }
 
-    dev->bar = pci_iomap(pdev, MY_PCI_BAR, 0);
+    dev->bar = pci_iomap(pdev, LX2162A_PCI_BAR, 0);
 
     if (!dev->bar)
     {
@@ -199,7 +198,7 @@ static int mypci_probe(struct pci_dev* pdev, const struct pci_device_id* id)
         goto err_free;
     }
 
-    dev_info(&pdev->dev, "BAR%d mapped at %p\n", MY_PCI_BAR, dev->bar);
+    dev_info(&pdev->dev, "BAR%d mapped at %p\n", LX2162A_PCI_BAR, dev->bar);
 
     ret = alloc_chrdev_region(&dev->devt, 0, 1, DEVICE_NAME);
 
@@ -252,7 +251,7 @@ err_free:
     kfree(dev);
 
 err_release_region:
-    pci_release_region(pdev, MY_PCI_BAR);
+    pci_release_region(pdev, LX2162A_PCI_BAR);
     pci_disable_device(pdev);
 
     return ret;
@@ -283,7 +282,7 @@ static void mypci_remove(struct pci_dev* pdev)
         pci_iounmap(pdev, dev->bar);
     }
 
-    pci_release_region(pdev, MY_PCI_BAR);
+    pci_release_region(pdev, LX2162A_PCI_BAR);
 
     pci_disable_device(pdev);
 
@@ -293,7 +292,7 @@ static void mypci_remove(struct pci_dev* pdev)
 
 static const struct pci_device_id mypci_ids[] = {
     {
-        PCI_DEVICE(MY_PCI_VENDOR_ID, MY_PCI_DEVICE_ID)
+        PCI_DEVICE(LX2162A_PCI_VENDOR_ID, LX2162A_PCI_DEVICE_ID)
     },
 
     { 0, }
@@ -313,7 +312,7 @@ static struct pci_driver mypci_driver =
 };
 
 
-static int __init mypci_init(void)
+static int __init lx2162a_pci_analyzer_init(void)
 {
     int ret;
 
@@ -338,7 +337,7 @@ static int __init mypci_init(void)
 }
 
 
-static void __exit mypci_exit(void)
+static void __exit lx2162a_pci_analyzer_exit(void)
 {
     pci_unregister_driver(&mypci_driver);
 
@@ -348,11 +347,11 @@ static void __exit mypci_exit(void)
 }
 
 
-module_init(mypci_init);
-module_exit(mypci_exit);
+module_init(lx2162a_pci_analyzer_init);
+module_exit(lx2162a_pci_analyzer_exit);
 
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Example");
-MODULE_DESCRIPTION("Simple PCIe BAR register access driver");
-MODULE_VERSION("1.0");
+MODULE_AUTHOR("Andre Kirchner");
+MODULE_DESCRIPTION("Monitor SoC PCIe state");
+MODULE_VERSION("0.01");
