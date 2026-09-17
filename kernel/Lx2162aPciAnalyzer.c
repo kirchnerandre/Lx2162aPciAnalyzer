@@ -47,14 +47,14 @@ static struct class* lx2162a_pci_class;
 
 static int lx2162a_pci_analyzer_open(struct inode* inode, struct file* file)
 {
-    struct lx2162a_pci_device* dev;
+    struct lx2162a_pci_device* device;
 
-    dev = container_of(
+    device = container_of(
         inode->i_cdev,
         struct lx2162a_pci_device,
         cdev);
 
-    file->private_data = dev;
+    file->private_data = device;
 
     return 0;
 }
@@ -68,10 +68,10 @@ static int lx2162a_pci_analyzer_release(struct inode* inode, struct file* file)
 
 static long lx2162a_pci_analyzer_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 {
-    struct lx2162a_pci_device*  dev             = file->private_data;
+    struct lx2162a_pci_device* device           = file->private_data;
     struct bar_register         bar_register;
 
-    if (!dev)
+    if (!device)
     {
         return -ENODEV;
     }
@@ -89,12 +89,12 @@ static long lx2162a_pci_analyzer_ioctl(struct file* file, unsigned int cmd, unsi
             return -EINVAL;
         }
 
-        if ((resource_size_t)bar_register.offset + sizeof(u32) > dev->bar_size)
+        if ((resource_size_t)bar_register.offset + sizeof(u32) > device->bar_size)
         {
             return -EINVAL;
         }
 
-        bar_register.value = ioread32(dev->bar + bar_register.offset);
+        bar_register.value = ioread32(device->bar + bar_register.offset);
 
         if (copy_to_user((void __user*)arg, &bar_register, sizeof(bar_register)))
         {
@@ -114,14 +114,14 @@ static long lx2162a_pci_analyzer_ioctl(struct file* file, unsigned int cmd, unsi
             return -EINVAL;
         }
 
-        if ((resource_size_t)bar_register.offset + sizeof(u32) > dev->bar_size)
+        if ((resource_size_t)bar_register.offset + sizeof(u32) > device->bar_size)
         {
             return -EINVAL;
         }
 
-        iowrite32(bar_register.value, dev->bar + bar_register.offset);
+        iowrite32(bar_register.value, device->bar + bar_register.offset);
 
-        readl(dev->bar + bar_register.offset);
+        readl(device->bar + bar_register.offset);
 
         return 0;
 
@@ -145,7 +145,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
     struct lx2162a_pci_device*  dev;
     int                         ret;
 
-    dev_info(&pdev->dev, "my_pci: device found: %04x:%04x\n", pdev->vendor, pdev->device);
+    dev_info(&pdev->dev, "Lx2162aPciAnalyzer: device found: %04x:%04x\n", pdev->vendor, pdev->device);
 
     ret = pci_enable_device(pdev);
 
@@ -235,7 +235,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
 
     pci_set_drvdata(pdev, dev);
 
-    dev_info(&pdev->dev, "my_pci driver loaded successfully\n");
+    dev_info(&pdev->dev, "Lx2162aPciAnalyzer driver loaded successfully\n");
 
     return 0;
 
@@ -271,7 +271,7 @@ static void lx2162a_pci_analyzer_remove(struct pci_dev* pdev)
         return;
     }
 
-    dev_info(&pdev->dev, "removing my_pci driver\n");
+    dev_info(&pdev->dev, "removing Lx2162aPciAnalyzer driver\n");
 
     device_destroy(lx2162a_pci_class, dev->devt);
 
@@ -333,7 +333,7 @@ static int __init lx2162a_pci_analyzer_init(void)
         return ret;
     }
 
-    pr_info("my_pci: driver loaded\n");
+    pr_info("Lx2162aPciAnalyzer: driver loaded\n");
 
     return 0;
 }
@@ -345,7 +345,7 @@ static void __exit lx2162a_pci_analyzer_exit(void)
 
     class_destroy(lx2162a_pci_class);
 
-    pr_info("my_pci: driver unloaded\n");
+    pr_info("Lx2162aPciAnalyzer: driver unloaded\n");
 }
 
 
