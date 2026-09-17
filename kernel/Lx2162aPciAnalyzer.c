@@ -68,7 +68,7 @@ static int lx2162a_pci_analyzer_release(struct inode* inode, struct file* file)
 
 static long lx2162a_pci_analyzer_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 {
-    struct lx2162a_pci_device* device           = file->private_data;
+    struct lx2162a_pci_device*  device          = file->private_data;
     struct bar_register         bar_register;
 
     if (!device)
@@ -143,33 +143,33 @@ static const struct file_operations lx2162a_pci_fops =
 static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_device_id* id)
 {
     struct lx2162a_pci_device*  device;
-    int                         ret;
+    int                         ret_val;
 
     dev_info(&pdev->dev, "Lx2162aPciAnalyzer: device found: %04x:%04x\n", pdev->vendor, pdev->device);
 
-    ret = pci_enable_device(pdev);
+    ret_val = pci_enable_device(pdev);
 
-    if (ret)
+    if (ret_val)
     {
-        dev_err(&pdev->dev, "pci_enable_device() failed: %d\n", ret);
-        return ret;
+        dev_err(&pdev->dev, "pci_enable_device() failed: %d\n", ret_val);
+        return ret_val;
     }
 
-    ret = pci_request_region(pdev, LX2162A_PCI_BAR, DRIVER_NAME);
+    ret_val = pci_request_region(pdev, LX2162A_PCI_BAR, DRIVER_NAME);
 
-    if (ret)
+    if (ret_val)
     {
-        dev_err(&pdev->dev, "pci_request_region() failed: %d\n", ret);
+        dev_err(&pdev->dev, "pci_request_region() failed: %d\n", ret_val);
 
         pci_disable_device(pdev);
-        return ret;
+        return ret_val;
     }
 
     device = kzalloc(sizeof(*device), GFP_KERNEL);
 
     if (!device)
     {
-        ret = -ENOMEM;
+        ret_val = -ENOMEM;
         goto err_release_region;
     }
 
@@ -186,7 +186,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
     {
         dev_err(&pdev->dev, "BAR%d is not a memory BAR\n", LX2162A_PCI_BAR);
 
-        ret = -ENODEV;
+        ret_val = -ENODEV;
         goto err_free;
     }
 
@@ -196,17 +196,17 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
     {
         dev_err(&pdev->dev, "pci_iomap() failed\n");
 
-        ret = -ENOMEM;
+        ret_val = -ENOMEM;
         goto err_free;
     }
 
     dev_info(&pdev->dev, "BAR%d mapped at %p\n", LX2162A_PCI_BAR, device->bar);
 
-    ret = alloc_chrdev_region(&device->devt, 0, 1, DEVICE_NAME);
+    ret_val = alloc_chrdev_region(&device->devt, 0, 1, DEVICE_NAME);
 
-    if (ret)
+    if (ret_val)
     {
-        dev_err(&pdev->dev, "alloc_chrdev_region() failed: %d\n", ret);
+        dev_err(&pdev->dev, "alloc_chrdev_region() failed: %d\n", ret_val);
         goto err_unmap;
     }
 
@@ -214,11 +214,11 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
 
     device->cdev.owner = THIS_MODULE;
 
-    ret = cdev_add(&device->cdev, device->devt, 1);
+    ret_val = cdev_add(&device->cdev, device->devt, 1);
 
-    if (ret)
+    if (ret_val)
     {
-        dev_err(&pdev->dev, "cdev_add() failed: %d\n", ret);
+        dev_err(&pdev->dev, "cdev_add() failed: %d\n", ret_val);
         goto err_unregister;
     }
 
@@ -226,9 +226,9 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
 
     if (IS_ERR(device->device))
     {
-        ret = PTR_ERR(device->device);
+        ret_val = PTR_ERR(device->device);
 
-        dev_err(&pdev->dev, "device_create() failed: %d\n", ret);
+        dev_err(&pdev->dev, "device_create() failed: %d\n", ret_val);
 
         goto err_cdev;
     }
@@ -256,7 +256,7 @@ err_release_region:
     pci_release_region(pdev, LX2162A_PCI_BAR);
     pci_disable_device(pdev);
 
-    return ret;
+    return ret_val;
 }
 
 
@@ -316,7 +316,7 @@ static struct pci_driver lx2162a_pci_driver =
 
 static int __init lx2162a_pci_analyzer_init(void)
 {
-    int ret;
+    int ret_val;
 
     lx2162a_pci_class = class_create(DRIVER_NAME);
 
@@ -325,12 +325,12 @@ static int __init lx2162a_pci_analyzer_init(void)
         return PTR_ERR(lx2162a_pci_class);
     }
 
-    ret = pci_register_driver(&lx2162a_pci_driver);
+    ret_val = pci_register_driver(&lx2162a_pci_driver);
 
-    if (ret)
+    if (ret_val)
     {
         class_destroy(lx2162a_pci_class);
-        return ret;
+        return ret_val;
     }
 
     pr_info("Lx2162aPciAnalyzer: driver loaded\n");
