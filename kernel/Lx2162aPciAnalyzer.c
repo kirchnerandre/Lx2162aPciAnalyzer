@@ -19,8 +19,8 @@
 #define LX2162A_PCI_MAGIC        'M'
 
 
-#define MYPCI_READ_REG  _IOWR(LX2162A_PCI_MAGIC, 0, struct bar_register)
-#define MYPCI_WRITE_REG _IOW (LX2162A_PCI_MAGIC, 1, struct bar_register)
+#define BAR_REGISTER_READ   _IOWR(LX2162A_PCI_MAGIC, 0, struct bar_register)
+#define BAR_REGISTER_WRITE  _IOW (LX2162A_PCI_MAGIC, 1, struct bar_register)
 
 
 struct bar_register
@@ -41,7 +41,8 @@ struct lx2162a_pci_device
     struct device*      device;
 };
 
-static struct class* mypci_class;
+
+static struct class* lx2162a_pci_class;
 
 
 static int lx2162a_pci_analyzer_open(struct inode* inode, struct file* file)
@@ -77,7 +78,7 @@ static long lx2162a_pci_analyzer_ioctl(struct file* file, unsigned int cmd, unsi
 
     switch (cmd)
     {
-    case MYPCI_READ_REG:
+    case BAR_REGISTER_READ:
         if (copy_from_user(&bar_register, (void __user*)arg, sizeof(bar_register)))
         {
             return -EFAULT;
@@ -102,7 +103,7 @@ static long lx2162a_pci_analyzer_ioctl(struct file* file, unsigned int cmd, unsi
 
         return 0;
 
-    case MYPCI_WRITE_REG:
+    case BAR_REGISTER_WRITE:
         if (copy_from_user(&bar_register, (void __user*)arg, sizeof(bar_register)))
         {
             return -EFAULT;
@@ -130,7 +131,7 @@ static long lx2162a_pci_analyzer_ioctl(struct file* file, unsigned int cmd, unsi
 }
 
 
-static const struct file_operations mypci_fops =
+static const struct file_operations lx2162a_pci_fops =
 {
     .owner              = THIS_MODULE,
     .open               = lx2162a_pci_analyzer_open,
@@ -209,7 +210,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
         goto err_unmap;
     }
 
-    cdev_init(&dev->cdev, &mypci_fops);
+    cdev_init(&dev->cdev, &lx2162a_pci_fops);
 
     dev->cdev.owner = THIS_MODULE;
 
@@ -221,7 +222,7 @@ static int lx2162a_pci_analyzer_probe(struct pci_dev* pdev, const struct pci_dev
         goto err_unregister;
     }
 
-    dev->device = device_create(mypci_class, &pdev->dev, dev->devt, dev, DEVICE_NAME);
+    dev->device = device_create(lx2162a_pci_class, &pdev->dev, dev->devt, dev, DEVICE_NAME);
 
     if (IS_ERR(dev->device))
     {
@@ -272,7 +273,7 @@ static void lx2162a_pci_analyzer_remove(struct pci_dev* pdev)
 
     dev_info(&pdev->dev, "removing my_pci driver\n");
 
-    device_destroy(mypci_class, dev->devt);
+    device_destroy(lx2162a_pci_class, dev->devt);
 
     cdev_del(&dev->cdev);
 
@@ -291,7 +292,7 @@ static void lx2162a_pci_analyzer_remove(struct pci_dev* pdev)
 }
 
 
-static const struct pci_device_id mypci_ids[] = {
+static const struct pci_device_id lx2162a_pci_ids[] = {
     {
         PCI_DEVICE(LX2162A_PCI_VENDOR_ID, LX2162A_PCI_DEVICE_ID)
     },
@@ -300,13 +301,13 @@ static const struct pci_device_id mypci_ids[] = {
 };
 
 
-MODULE_DEVICE_TABLE(pci, mypci_ids);
+MODULE_DEVICE_TABLE(pci, lx2162a_pci_ids);
 
 
-static struct pci_driver mypci_driver =
+static struct pci_driver lx2162a_pci_driver =
 {
     .name       = DRIVER_NAME,
-    .id_table   = mypci_ids,
+    .id_table   = lx2162a_pci_ids,
 
     .probe      = lx2162a_pci_analyzer_probe,
     .remove     = lx2162a_pci_analyzer_remove,
@@ -317,18 +318,18 @@ static int __init lx2162a_pci_analyzer_init(void)
 {
     int ret;
 
-    mypci_class = class_create(DRIVER_NAME);
+    lx2162a_pci_class = class_create(DRIVER_NAME);
 
-    if (IS_ERR(mypci_class))
+    if (IS_ERR(lx2162a_pci_class))
     {
-        return PTR_ERR(mypci_class);
+        return PTR_ERR(lx2162a_pci_class);
     }
 
-    ret = pci_register_driver(&mypci_driver);
+    ret = pci_register_driver(&lx2162a_pci_driver);
 
     if (ret)
     {
-        class_destroy(mypci_class);
+        class_destroy(lx2162a_pci_class);
         return ret;
     }
 
@@ -340,9 +341,9 @@ static int __init lx2162a_pci_analyzer_init(void)
 
 static void __exit lx2162a_pci_analyzer_exit(void)
 {
-    pci_unregister_driver(&mypci_driver);
+    pci_unregister_driver(&lx2162a_pci_driver);
 
-    class_destroy(mypci_class);
+    class_destroy(lx2162a_pci_class);
 
     pr_info("my_pci: driver unloaded\n");
 }
