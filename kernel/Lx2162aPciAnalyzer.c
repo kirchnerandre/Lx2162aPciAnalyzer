@@ -26,12 +26,12 @@ struct lx2162a_bar
 static struct lx2162a_bar* devdata;
 
 
-static ssize_t lx2162a_pci_analyzer_read(struct file* file, char __user* buf, size_t count, loff_t* ppos)
+static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer, size_t Size, loff_t* Offset)
 {
     u32             value   = 0;
-    resource_size_t offset  = *ppos;
+    resource_size_t offset  = *Offset;
 
-    if (count != sizeof(value))
+    if (Size != sizeof(value))
     {
         return -EINVAL;
     }
@@ -48,23 +48,23 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* file, char __user* buf, si
 
     value = ioread32(devdata->base + offset);
 
-    if (copy_to_user(buf, &value, sizeof(value)))
+    if (copy_to_user(Buffer, &value, sizeof(value)))
     {
         return -EFAULT;
     }
 
-    *ppos += sizeof(value);
+    *Offset += sizeof(value);
 
     return sizeof(value);
 }
 
 
-static ssize_t lx2162a_pci_analyzer_write(struct file* file, const char __user* buf, size_t count, loff_t* ppos)
+static ssize_t lx2162a_pci_analyzer_write(struct file* File, const char __user* Buffer, size_t Size, loff_t* Offset)
 {
     u32             value   = 0;
-    resource_size_t offset  = *ppos;
+    resource_size_t offset  = *Offset;
 
-    if (count != sizeof(value))
+    if (Size != sizeof(value))
     {
         return -EINVAL;
     }
@@ -79,14 +79,14 @@ static ssize_t lx2162a_pci_analyzer_write(struct file* file, const char __user* 
         return -EINVAL;
     }
 
-    if (copy_from_user(&value, buf, sizeof(value)))
+    if (copy_from_user(&value, Buffer, sizeof(value)))
     {
         return -EFAULT;
     }
 
     iowrite32(value, devdata->base + offset);
 
-    *ppos += sizeof(value);
+    *Offset += sizeof(value);
 
     return sizeof(value);
 }
@@ -189,6 +189,7 @@ static void __exit lx2162a_pci_analyzer_exit(void)
 {
     if (!devdata)
     {
+        pr_err("%s:%d:%s: Driver was not loaded\n", __FILE__, __LINE__, __func__);
         return;
     }
 
@@ -204,8 +205,6 @@ static void __exit lx2162a_pci_analyzer_exit(void)
     kfree(devdata);
 
     devdata = NULL;
-
-    pr_info(DRIVER_NAME ": unloaded\n");
 }
 
 
