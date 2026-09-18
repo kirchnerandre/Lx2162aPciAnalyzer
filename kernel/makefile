@@ -1,7 +1,9 @@
-obj-m += Lx2162aPciAnalyzer.o
-
 KDIR := /lib/modules/$(shell uname -r)/build
 PWD  := $(shell pwd)
+
+obj-m := Lx2162aPciAnalyzer.o
+
+ccflags-y := -I$(src)
 
 BUILD_DIR := $(PWD)/build
 

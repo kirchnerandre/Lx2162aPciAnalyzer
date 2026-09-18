@@ -10,9 +10,51 @@
 #include <linux/uaccess.h>
 
 
-#define DRIVER_NAME             "Lx2162aPciAnalyzer"
-#define LX2162A_PCI_VENDOR_ID   0x1414
-#define LX2162A_PCI_DEVICE_ID   0x00b9
+#define DRIVER_NAME                                                 "Lx2162aPciAnalyzer"
+#define LX2162A_PCI_VENDOR_ID                                       0x1414
+#define LX2162A_PCI_DEVICE_ID                                       0x00b9
+
+#define Address_Uncorrectable_Error_Status_Register                 0x0104
+#define Address_Uncorrectable_Error_Mask_Register                   0x0108
+#define Address_Uncorrectable_Error_Severity_Register               0x010C
+#define Address_Correctable_Error_Status_Register                   0x0110
+#define Address_Correctable_Error_Mask_Register                     0x0114
+#define Address_Advanced_Error_Capabilities_and_Control_Register    0x0118
+#define Address_Header_Log_Register_Dword1                          0x011C
+#define Address_Header_Log_Register_Dword2                          0x0120
+#define Address_Header_Log_Register_Dword3                          0x0124
+#define Address_Header_Log_Register_Dword4                          0x0128
+#define Address_Root_Error_Command_Register                         0x012C
+#define Address_Root_Error_Status_Register                          0x0130
+#define Address_Correctable_Error_Source_Id_Register                0x0134
+#define Address_Error_Source_Id_Register                            0x0136
+#define Address_Ari_Capability_Header                               0x0148
+#define Address_Ari_Capability_Register                             0x014C
+#define Address_Ari_Control_Register                                0x014E
+#define Address_Spcie_Cap_Header_Reg                                0x0158
+#define Address_Link_Control3_Reg                                   0x015C
+#define Address_Labe_Err_Status_Reg                                 0x0160
+
+#define Width_Uncorrectable_Error_Status_Register                   32
+#define Width_Uncorrectable_Error_Mask_Register                     32
+#define Width_Uncorrectable_Error_Severity_Register                 32
+#define Width_Correctable_Error_Status_Register                     32
+#define Width_Correctable_Error_Mask_Register                       32
+#define Width_Advanced_Error_Capabilities_and_Control_Register      32
+#define Width_Header_Log_Register_Dword1                            32
+#define Width_Header_Log_Register_Dword2                            32
+#define Width_Header_Log_Register_Dword3                            32
+#define Width_Header_Log_Register_Dword4                            32
+#define Width_Root_Error_Command_Register                           32
+#define Width_Root_Error_Status_Register                            32
+#define Width_Correctable_Error_Source_Id_Register                  16
+#define Width_Error_Source_Id_Register                              16
+#define Width_Ari_Capability_Header                                 32
+#define Width_Ari_Capability_Register                               32
+#define Width_Ari_Control_Register                                  32
+#define Width_Spcie_Cap_Header_Reg                                  32
+#define Width_Link_Control3_Reg                                     32
+#define Width_Labe_Err_Status_Reg                                   32
 
 
 struct Lx2162aPciAnalyzerData
@@ -27,9 +69,87 @@ struct Lx2162aPciAnalyzerData
 static struct Lx2162aPciAnalyzerData* lx2162a_pci_analyzer_data;
 
 
+static int lx2162a_pci_analyzer_periodic_reg_read(u32* Value, loff_t Offset, size_t Size)
+{
+    int retval = 0;
+
+    if (Size == 16u)
+    {
+        u16 value = 0u;
+
+        retval = pci_read_config_word(lx2162a_pci_analyzer_data->PDev, Offset, &value);
+
+        *Value = value;
+    }
+    else if (Size == 32u)
+    {
+        retval = pci_read_config_dword(lx2162a_pci_analyzer_data->PDev, Offset, Value);
+    }
+    else
+    {
+        pr_err("%s:%d:%s: Invalid register size\n", __FILE__, __LINE__, __func__);
+        return -EINVAL;
+    }
+
+    if (retval < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read register\n", __FILE__, __LINE__, __func__);
+        return retval;
+    }
+
+    return retval;
+}
+
+
+static int lx2162a_pci_analyzer_periodic_reg_write(u32 Value, loff_t Offset, size_t Size)
+{
+    if (Size == 16u)
+    {
+        iowrite16(Value, lx2162a_pci_analyzer_data->Base + Offset);
+        return 0;
+    }
+    else if (Size == 32u)
+    {
+        iowrite32(Value, lx2162a_pci_analyzer_data->Base + Offset);
+        return 0;
+    }
+    else
+    {
+        return -EINVAL;
+    }
+}
+
+
+static int lx2162a_pci_analyzer_periodic_configure(void)
+{
+    u32 advanced_error_reporting_capability_id_register_address = 0x0100;
+    u32 advanced_error_reporting_capability_id_register_width   = 16u;
+    u32 value_expected                                          = 0x0001;
+    u32 value_current                                           = 0u;
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(&value_current, advanced_error_reporting_capability_id_register_address, advanced_error_reporting_capability_id_register_width) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read register\n", __FILE__, __LINE__, __func__);
+        return -1;
+    }
+
+    if (value_current != value_expected)
+    {
+        pr_err("%s:%d:%s: Advanced error reporting capability not supported %u %u\n", __FILE__, __LINE__, __func__, value_current, value_expected);
+        return -1;
+    }
+
+    return 0;
+}
+
+
 static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
 {
-    pr_info(DRIVER_NAME "lx2162a_pci_analyzer_periodic_work\n");
+    struct timespec64 time_stamp;
+
+    ktime_get_real_ts64(&time_stamp);
+
+    pr_info(DRIVER_NAME "lx2162a_pci_analyzer_periodic_work %lld.%09ld\n", (long long)time_stamp.tv_sec, time_stamp.tv_nsec);
 
     schedule_delayed_work(&lx2162a_pci_analyzer_data->DelayedWork, msecs_to_jiffies(1000));
 }
@@ -178,6 +298,13 @@ static int __init lx2162a_pci_analyzer_init(void)
     if (retval)
     {
         pr_err("%s:%d:%s: Failed to register device\n", __FILE__, __LINE__, __func__);
+        pci_iounmap(pdev, lx2162a_pci_analyzer_data->Base);
+        goto terminate;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_configure())
+    {
+        pr_err("%s:%d:%s: Failed to configure device\n", __FILE__, __LINE__, __func__);
         pci_iounmap(pdev, lx2162a_pci_analyzer_data->Base);
         goto terminate;
     }
