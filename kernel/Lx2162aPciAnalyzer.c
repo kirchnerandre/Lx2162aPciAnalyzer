@@ -15,12 +15,6 @@
 #define LX2162A_PCI_DEVICE_ID   0x00b9
 
 
-static int bar = 0;
-
-module_param(bar, int, 0444);
-MODULE_PARM_DESC(bar, "PCI BAR number to map (default: 0)");
-
-
 struct lx2162a_bar
 {
     struct pci_dev* pdev;
@@ -34,8 +28,8 @@ static struct lx2162a_bar* devdata;
 
 static ssize_t lx2162a_pci_analyzer_read(struct file* file, char __user* buf, size_t count, loff_t* ppos)
 {
-    u32 value;
-    resource_size_t offset = *ppos;
+    u32             value   = 0;
+    resource_size_t offset  = *ppos;
 
     if (count != sizeof(value))
     {
@@ -67,8 +61,8 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* file, char __user* buf, si
 
 static ssize_t lx2162a_pci_analyzer_write(struct file* file, const char __user* buf, size_t count, loff_t* ppos)
 {
-    u32 value;
-    resource_size_t offset = *ppos;
+    u32             value   = 0;
+    resource_size_t offset  = *ppos;
 
     if (count != sizeof(value))
     {
@@ -112,21 +106,16 @@ static struct miscdevice lx2162a_pci_analyzer_miscdev =
     .minor  = MISC_DYNAMIC_MINOR,
     .name   = "Lx2162aPciAnalyzer",
     .fops   = &lx2162a_pci_analyzer_fops,
-    .mode   = 0600,
+    .mode   = 0444,
 };
 
 
 static int __init lx2162a_pci_analyzer_init(void)
 {
-    struct pci_dev* pdev;
-    unsigned long flags;
-    int ret;
-
-    if (bar < 0 || bar >= PCI_STD_NUM_BARS)
-    {
-        pr_err("%s:%d:%s: Invalid BAR number\n", __FILE__, __LINE__, __func__);
-        return -EINVAL;
-    }
+    struct pci_dev* pdev    = NULL;
+    unsigned long   flags   = 0;
+    int             bar     = 0;
+    int             retval  = 0;
 
     pdev = pci_get_device(LX2162A_PCI_VENDOR_ID, LX2162A_PCI_DEVICE_ID, NULL);
 
@@ -145,26 +134,22 @@ static int __init lx2162a_pci_analyzer_init(void)
         return -ENOMEM;
     }
 
-    devdata->pdev = pdev;
-
-    pr_info(DRIVER_NAME ": found %04x:%04x at %s\n", pdev->vendor, pdev->device, pci_name(pdev));
+    devdata->pdev   = pdev;
 
     flags           = pci_resource_flags(pdev, bar);
-    devdata->size   = pci_resource_len(pdev, bar);
-
-    pr_info(DRIVER_NAME ": BAR%d start=0x%llx size=0x%llx flags=0x%lx\n", bar, (unsigned long long)pci_resource_start(pdev, bar), (unsigned long long)devdata->size, flags);
+    devdata->size   = pci_resource_len  (pdev, bar);
 
     if (!(flags & (IORESOURCE_MEM | IORESOURCE_IO)))
     {
         pr_err("%s:%d:%s: Not IO or memory resource\n", __FILE__, __LINE__, __func__);
-        ret = -EINVAL;
+        retval = -EINVAL;
         goto err_put;
     }
 
     if (!devdata->size)
     {
         pr_err("%s:%d:%s: BAR register has length zero\n", __FILE__, __LINE__, __func__);
-        ret = -EINVAL;
+        retval = -EINVAL;
         goto err_put;
     }
 
@@ -173,30 +158,30 @@ static int __init lx2162a_pci_analyzer_init(void)
     if (!devdata->base)
     {
         pr_err("%s:%d:%s: Failed to map BAR register\n", __FILE__, __LINE__, __func__);
-        ret = -ENOMEM;
+        retval = -ENOMEM;
         goto err_put;
     }
 
-    ret = misc_register(&lx2162a_pci_analyzer_miscdev);
+    retval = misc_register(&lx2162a_pci_analyzer_miscdev);
 
-    if (ret)
+    if (retval)
     {
         pr_err("%s:%d:%s: Failed to register device\n", __FILE__, __LINE__, __func__);
         pci_iounmap(pdev, devdata->base);
         goto err_put;
     }
 
-    pr_info(DRIVER_NAME ": BAR%d mapped, device available as /dev/%s\n", bar, lx2162a_pci_analyzer_miscdev.name);
-
-    pr_info("%s:%d:%s: Initialized\n", __FILE__, __LINE__, __func__);
-
-    return 0;
+    pr_info(DRIVER_NAME ": (%04x:%04x) BAR%d start=0x%llx size=0x%llx flags=0x%lx\n", pdev->vendor, pdev->device, bar, (unsigned long long)pci_resource_start(pdev, bar), (unsigned long long)devdata->size, flags);
 
 err_put:
-    kfree(devdata);
-    devdata = NULL;
-    pci_dev_put(pdev);
-    return ret;
+    if (retval)
+    {
+        kfree(devdata);
+        devdata = NULL;
+        pci_dev_put(pdev);
+    }
+
+    return retval;
 }
 
 
@@ -217,6 +202,7 @@ static void __exit lx2162a_pci_analyzer_exit(void)
     pci_dev_put(devdata->pdev);
 
     kfree(devdata);
+
     devdata = NULL;
 
     pr_info(DRIVER_NAME ": unloaded\n");
