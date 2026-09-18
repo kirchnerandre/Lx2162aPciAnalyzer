@@ -1,5 +1,4 @@
 
-
 #include <linux/fs.h>
 #include <linux/io.h>
 #include <linux/kernel.h>
@@ -15,7 +14,7 @@
 #define LX2162A_PCI_DEVICE_ID   0x00b9
 
 
-struct lx2162a_bar
+struct Lx2162aPciAnalyzerData
 {
     struct pci_dev* pdev;
     void __iomem*   base;
@@ -23,7 +22,7 @@ struct lx2162a_bar
 };
 
 
-static struct lx2162a_bar* devdata;
+static struct Lx2162aPciAnalyzerData* lx2162a_pci_analyzer_data;
 
 
 static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer, size_t Size, loff_t* Offset)
@@ -41,12 +40,12 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
         return -EINVAL;
     }
 
-    if (offset + sizeof(value) > devdata->size)
+    if (offset + sizeof(value) > lx2162a_pci_analyzer_data->size)
     {
         return -EINVAL;
     }
 
-    value = ioread32(devdata->base + offset);
+    value = ioread32(lx2162a_pci_analyzer_data->base + offset);
 
     if (copy_to_user(Buffer, &value, sizeof(value)))
     {
@@ -74,7 +73,7 @@ static ssize_t lx2162a_pci_analyzer_write(struct file* File, const char __user* 
         return -EINVAL;
     }
 
-    if (offset + sizeof(value) > devdata->size)
+    if (offset + sizeof(value) > lx2162a_pci_analyzer_data->size)
     {
         return -EINVAL;
     }
@@ -84,7 +83,7 @@ static ssize_t lx2162a_pci_analyzer_write(struct file* File, const char __user* 
         return -EFAULT;
     }
 
-    iowrite32(value, devdata->base + offset);
+    iowrite32(value, lx2162a_pci_analyzer_data->base + offset);
 
     *Offset += sizeof(value);
 
@@ -125,19 +124,19 @@ static int __init lx2162a_pci_analyzer_init(void)
         return -ENODEV;
     }
 
-    devdata = kzalloc(sizeof(*devdata), GFP_KERNEL);
+    lx2162a_pci_analyzer_data = kzalloc(sizeof(*lx2162a_pci_analyzer_data), GFP_KERNEL);
 
-    if (!devdata)
+    if (!lx2162a_pci_analyzer_data)
     {
         pr_err("%s:%d:%s: Failed to allocate memory\n", __FILE__, __LINE__, __func__);
         pci_dev_put(pdev);
         return -ENOMEM;
     }
 
-    devdata->pdev   = pdev;
+    lx2162a_pci_analyzer_data->pdev     = pdev;
 
-    flags           = pci_resource_flags(pdev, bar);
-    devdata->size   = pci_resource_len  (pdev, bar);
+    flags                               = pci_resource_flags(pdev, bar);
+    lx2162a_pci_analyzer_data->size     = pci_resource_len  (pdev, bar);
 
     if (!(flags & (IORESOURCE_MEM | IORESOURCE_IO)))
     {
@@ -146,16 +145,16 @@ static int __init lx2162a_pci_analyzer_init(void)
         goto err_put;
     }
 
-    if (!devdata->size)
+    if (!lx2162a_pci_analyzer_data->size)
     {
         pr_err("%s:%d:%s: BAR register has length zero\n", __FILE__, __LINE__, __func__);
         retval = -EINVAL;
         goto err_put;
     }
 
-    devdata->base = pci_iomap(pdev, bar, 0);
+    lx2162a_pci_analyzer_data->base = pci_iomap(pdev, bar, 0);
 
-    if (!devdata->base)
+    if (!lx2162a_pci_analyzer_data->base)
     {
         pr_err("%s:%d:%s: Failed to map BAR register\n", __FILE__, __LINE__, __func__);
         retval = -ENOMEM;
@@ -167,17 +166,17 @@ static int __init lx2162a_pci_analyzer_init(void)
     if (retval)
     {
         pr_err("%s:%d:%s: Failed to register device\n", __FILE__, __LINE__, __func__);
-        pci_iounmap(pdev, devdata->base);
+        pci_iounmap(pdev, lx2162a_pci_analyzer_data->base);
         goto err_put;
     }
 
-    pr_info(DRIVER_NAME ": (%04x:%04x) BAR%d start=0x%llx size=0x%llx flags=0x%lx\n", pdev->vendor, pdev->device, bar, (unsigned long long)pci_resource_start(pdev, bar), (unsigned long long)devdata->size, flags);
+    pr_info(DRIVER_NAME ": (%04x:%04x) BAR%d start=0x%llx size=0x%llx flags=0x%lx\n", pdev->vendor, pdev->device, bar, (unsigned long long)pci_resource_start(pdev, bar), (unsigned long long)lx2162a_pci_analyzer_data->size, flags);
 
 err_put:
     if (retval)
     {
-        kfree(devdata);
-        devdata = NULL;
+        kfree(lx2162a_pci_analyzer_data);
+        lx2162a_pci_analyzer_data = NULL;
         pci_dev_put(pdev);
     }
 
@@ -187,7 +186,7 @@ err_put:
 
 static void __exit lx2162a_pci_analyzer_exit(void)
 {
-    if (!devdata)
+    if (!lx2162a_pci_analyzer_data)
     {
         pr_err("%s:%d:%s: Driver was not loaded\n", __FILE__, __LINE__, __func__);
         return;
@@ -195,16 +194,16 @@ static void __exit lx2162a_pci_analyzer_exit(void)
 
     misc_deregister(&lx2162a_pci_analyzer_miscdev);
 
-    if (devdata->base)
+    if (lx2162a_pci_analyzer_data->base)
     {
-        pci_iounmap(devdata->pdev, devdata->base);
+        pci_iounmap(lx2162a_pci_analyzer_data->pdev, lx2162a_pci_analyzer_data->base);
     }
 
-    pci_dev_put(devdata->pdev);
+    pci_dev_put(lx2162a_pci_analyzer_data->pdev);
 
-    kfree(devdata);
+    kfree(lx2162a_pci_analyzer_data);
 
-    devdata = NULL;
+    lx2162a_pci_analyzer_data = NULL;
 }
 
 
