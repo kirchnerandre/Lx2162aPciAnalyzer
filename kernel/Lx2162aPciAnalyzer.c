@@ -14,30 +14,6 @@
 #define LX2162A_PCI_VENDOR_ID                                       0x1414
 #define LX2162A_PCI_DEVICE_ID                                       0x00b9
 
-#define Address_Uncorrectable_Error_Status_Register                 0x0104
-#define Address_Uncorrectable_Error_Severity_Register               0x010C
-#define Address_Correctable_Error_Status_Register                   0x0110
-#define Address_Header_Log_Register_Dword1                          0x011C
-#define Address_Header_Log_Register_Dword2                          0x0120
-#define Address_Header_Log_Register_Dword3                          0x0124
-#define Address_Header_Log_Register_Dword4                          0x0128
-#define Address_Root_Error_Status_Register                          0x0130
-#define Address_Correctable_Error_Source_Id_Register                0x0134
-#define Address_Error_Source_Id_Register                            0x0136
-#define Address_Labe_Err_Status_Reg                                 0x0160
-
-#define Width_Uncorrectable_Error_Status_Register                   32
-#define Width_Uncorrectable_Error_Severity_Register                 32
-#define Width_Correctable_Error_Status_Register                     32
-#define Width_Header_Log_Register_Dword1                            32
-#define Width_Header_Log_Register_Dword2                            32
-#define Width_Header_Log_Register_Dword3                            32
-#define Width_Header_Log_Register_Dword4                            32
-#define Width_Root_Error_Status_Register                            32
-#define Width_Correctable_Error_Source_Id_Register                  16
-#define Width_Error_Source_Id_Register                              16
-#define Width_Labe_Err_Status_Reg                                   32
-
 
 struct Lx2162aPciAnalyzerData
 {
@@ -113,7 +89,7 @@ static int lx2162a_pci_analyzer_periodic_reg_write(u32 Value, loff_t Offset, siz
 }
 
 
-static int lx2162a_pci_analyzer_periodic_configure(void)
+static int lx2162a_pci_analyzer_configure(void)
 {
     int retval                                                      = 0;
 
@@ -122,25 +98,26 @@ static int lx2162a_pci_analyzer_periodic_configure(void)
     u32 advanced_error_reporting_capability_id_register_size        = 16u;
     u32 advanced_error_reporting_capability_id_register_expected    = 0x00000001;
 
-    u32 uncorrectable_error_mask_register_address                   = 0x0108;
     u32 uncorrectable_error_mask_register_value                     = 0x001ff010;
+    u32 uncorrectable_error_mask_register_address                   = 0x0108;
     u32 uncorrectable_error_mask_register_size                      = 32u;
 
-    u32 correctable_error_mask_register_address                     = 0x0114;
     u32 correctable_error_mask_register_value                       = 0x000031c1;
+    u32 correctable_error_mask_register_address                     = 0x0114;
     u32 correctable_error_mask_register_size                        = 32u;
 
-    u32 advanced_error_capabilities_and_control_register_address    = 0x0118;
     u32 advanced_error_capabilities_and_control_register_value      = 0x000001e0;
+    u32 advanced_error_capabilities_and_control_register_address    = 0x0118;
     u32 advanced_error_capabilities_and_control_register_size       = 32u;
 
-    u32 root_error_command_register_address                         = 0x012C;
     u32 root_error_command_register_value                           = 00000007;
+    u32 root_error_command_register_address                         = 0x012C;
     u32 root_error_command_register_size                            = 32u;
 
-    retval = lx2162a_pci_analyzer_periodic_reg_read(&advanced_error_reporting_capability_id_register_value,
-                                                    advanced_error_reporting_capability_id_register_address,
-                                                    advanced_error_reporting_capability_id_register_size);
+    retval = lx2162a_pci_analyzer_periodic_reg_read(
+        &advanced_error_reporting_capability_id_register_value,
+        advanced_error_reporting_capability_id_register_address,
+        advanced_error_reporting_capability_id_register_size);
 
     if (retval < 0)
     {
@@ -154,9 +131,10 @@ static int lx2162a_pci_analyzer_periodic_configure(void)
         return -EINVAL;
     }
 
-    retval = lx2162a_pci_analyzer_periodic_reg_write(uncorrectable_error_mask_register_value,
-                                                    uncorrectable_error_mask_register_address,
-                                                    uncorrectable_error_mask_register_size);
+    retval = lx2162a_pci_analyzer_periodic_reg_write(
+        uncorrectable_error_mask_register_value,
+        uncorrectable_error_mask_register_address,
+        uncorrectable_error_mask_register_size);
 
     if (retval < 0)
     {
@@ -164,9 +142,10 @@ static int lx2162a_pci_analyzer_periodic_configure(void)
         return retval;
     }
 
-    retval = lx2162a_pci_analyzer_periodic_reg_write(correctable_error_mask_register_value,
-                                                    correctable_error_mask_register_address,
-                                                    correctable_error_mask_register_size);
+    retval = lx2162a_pci_analyzer_periodic_reg_write(
+        correctable_error_mask_register_value,
+        correctable_error_mask_register_address,
+        correctable_error_mask_register_size);
 
     if (retval < 0)
     {
@@ -174,9 +153,10 @@ static int lx2162a_pci_analyzer_periodic_configure(void)
         return retval;
     }
 
-    retval = lx2162a_pci_analyzer_periodic_reg_write(advanced_error_capabilities_and_control_register_address,
-                                                    advanced_error_capabilities_and_control_register_value,
-                                                    advanced_error_capabilities_and_control_register_size);
+    retval = lx2162a_pci_analyzer_periodic_reg_write(
+        advanced_error_capabilities_and_control_register_address,
+        advanced_error_capabilities_and_control_register_value,
+        advanced_error_capabilities_and_control_register_size);
 
     if (retval < 0)
     {
@@ -184,9 +164,10 @@ static int lx2162a_pci_analyzer_periodic_configure(void)
         return retval;
     }
 
-    retval = lx2162a_pci_analyzer_periodic_reg_write(root_error_command_register_address,
-                                                    root_error_command_register_value,
-                                                    root_error_command_register_size);
+    retval = lx2162a_pci_analyzer_periodic_reg_write(
+        root_error_command_register_address,
+        root_error_command_register_value,
+        root_error_command_register_size);
 
     if (retval < 0)
     {
@@ -200,11 +181,154 @@ static int lx2162a_pci_analyzer_periodic_configure(void)
 
 static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
 {
+    u32 uncorrectable_error_status_register_value       = 0u;
+    u32 uncorrectable_error_status_register_address     = 0x0104;
+    u32 uncorrectable_error_status_register_size        = 32u;
+
+    u32 uncorrectable_error_severity_register_value     = 0u;
+    u32 uncorrectable_error_severity_register_address   = 0x010C;
+    u32 uncorrectable_error_severity_register_size      = 32u;
+
+    u32 correctable_error_status_register_value         = 0u;
+    u32 correctable_error_status_register_address       = 0x0110;
+    u32 correctable_error_status_register_size          = 32u;
+
+    u32 header_log_register_dword1_value                = 0u;
+    u32 header_log_register_dword1_address              = 0x011C;
+    u32 header_log_register_dword1_size                 = 32u;
+
+    u32 header_log_register_dword2_value                = 0u;
+    u32 header_log_register_dword2_address              = 0x0120;
+    u32 header_log_register_dword2_size                 = 32u;
+
+    u32 header_log_register_dword3_value                = 0u;
+    u32 header_log_register_dword3_address              = 0x0124;
+    u32 header_log_register_dword3_size                 = 32u;
+
+    u32 header_log_register_dword4_value                = 0u;
+    u32 header_log_register_dword4_address              = 0x0128;
+    u32 header_log_register_dword4_size                 = 32u;
+
+    u32 root_error_status_register_value                = 0u;
+    u32 root_error_status_register_address              = 0x0130;
+    u32 root_error_status_register_size                 = 32u;
+
+    u32 correctable_error_source_id_register_value      = 0u;
+    u32 correctable_error_source_id_register_address    = 0x0134;
+    u32 correctable_error_source_id_register_size       = 16u;
+
+    u32 error_source_id_register_value                  = 0u;
+    u32 error_source_id_register_address                = 0x0136;
+    u32 error_source_id_register_size                   = 16u;
+
+    u32 lane_error_status_register_value                = 0u;
+    u32 lane_error_status_register_address              = 0x0160;
+    u32 lane_error_status_register_size                 = 32u;
+
     struct timespec64 time_stamp;
 
     ktime_get_real_ts64(&time_stamp);
 
     pr_info(DRIVER_NAME "lx2162a_pci_analyzer_periodic_work %lld.%09ld\n", (long long)time_stamp.tv_sec, time_stamp.tv_nsec);
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+            &uncorrectable_error_status_register_value,
+            uncorrectable_error_status_register_address,
+            uncorrectable_error_status_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read uncorrectable error status register\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &uncorrectable_error_severity_register_value,
+        uncorrectable_error_severity_register_address,
+        uncorrectable_error_severity_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read uncorrectable error severity register\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &correctable_error_status_register_value,
+        correctable_error_status_register_address,
+        correctable_error_status_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read correctable error status register\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &header_log_register_dword1_value,
+        header_log_register_dword1_address,
+        header_log_register_dword1_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read header log register dword1\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &header_log_register_dword2_value,
+        header_log_register_dword2_address,
+        header_log_register_dword2_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read header log register dword2\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &header_log_register_dword3_value,
+        header_log_register_dword3_address,
+        header_log_register_dword3_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read header log register dword3\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &header_log_register_dword4_value,
+        header_log_register_dword4_address,
+        header_log_register_dword4_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read header log register dword4\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &root_error_status_register_value,
+        root_error_status_register_address,
+        root_error_status_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read root error status register\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &correctable_error_source_id_register_value,
+        correctable_error_source_id_register_address,
+        correctable_error_source_id_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read correctable error source id register\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &error_source_id_register_value,
+        error_source_id_register_address,
+        error_source_id_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read error source id register\n", __FILE__, __LINE__, __func__);
+        return;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &lane_error_status_register_value,
+        lane_error_status_register_address,
+        lane_error_status_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read lane_error status register\n", __FILE__, __LINE__, __func__);
+        return;
+    }
 
     schedule_delayed_work(&lx2162a_pci_analyzer_data->DelayedWork, msecs_to_jiffies(1000));
 }
@@ -357,7 +481,7 @@ static int __init lx2162a_pci_analyzer_init(void)
         goto terminate;
     }
 
-    if (lx2162a_pci_analyzer_periodic_configure())
+    if (lx2162a_pci_analyzer_configure())
     {
         pr_err("%s:%d:%s: Failed to configure device\n", __FILE__, __LINE__, __func__);
         pci_iounmap(pdev, lx2162a_pci_analyzer_data->Base);
