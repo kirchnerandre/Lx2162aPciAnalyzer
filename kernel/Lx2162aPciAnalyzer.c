@@ -21,15 +21,9 @@
 #define Address_Header_Log_Register_Dword2                          0x0120
 #define Address_Header_Log_Register_Dword3                          0x0124
 #define Address_Header_Log_Register_Dword4                          0x0128
-#define Address_Root_Error_Command_Register                         0x012C
 #define Address_Root_Error_Status_Register                          0x0130
 #define Address_Correctable_Error_Source_Id_Register                0x0134
 #define Address_Error_Source_Id_Register                            0x0136
-#define Address_Ari_Capability_Header                               0x0148
-#define Address_Ari_Capability_Register                             0x014C
-#define Address_Ari_Control_Register                                0x014E
-#define Address_Spcie_Cap_Header_Reg                                0x0158
-#define Address_Link_Control3_Reg                                   0x015C
 #define Address_Labe_Err_Status_Reg                                 0x0160
 
 #define Width_Uncorrectable_Error_Status_Register                   32
@@ -39,15 +33,9 @@
 #define Width_Header_Log_Register_Dword2                            32
 #define Width_Header_Log_Register_Dword3                            32
 #define Width_Header_Log_Register_Dword4                            32
-#define Width_Root_Error_Command_Register                           32
 #define Width_Root_Error_Status_Register                            32
 #define Width_Correctable_Error_Source_Id_Register                  16
 #define Width_Error_Source_Id_Register                              16
-#define Width_Ari_Capability_Header                                 32
-#define Width_Ari_Capability_Register                               32
-#define Width_Ari_Control_Register                                  32
-#define Width_Spcie_Cap_Header_Reg                                  32
-#define Width_Link_Control3_Reg                                     32
 #define Width_Labe_Err_Status_Reg                                   32
 
 
@@ -127,59 +115,83 @@ static int lx2162a_pci_analyzer_periodic_reg_write(u32 Value, loff_t Offset, siz
 
 static int lx2162a_pci_analyzer_periodic_configure(void)
 {
+    int retval                                                      = 0;
+
     u32 advanced_error_reporting_capability_id_register_address     = 0x0100;
-    u32 advanced_error_reporting_capability_id_register_size        = 16u;
     u32 advanced_error_reporting_capability_id_register_value       = 0u;
+    u32 advanced_error_reporting_capability_id_register_size        = 16u;
     u32 advanced_error_reporting_capability_id_register_expected    = 0x00000001;
 
     u32 uncorrectable_error_mask_register_address                   = 0x0108;
-    u32 uncorrectable_error_mask_register_size                      = 32u;
     u32 uncorrectable_error_mask_register_value                     = 0x001ff010;
+    u32 uncorrectable_error_mask_register_size                      = 32u;
 
     u32 correctable_error_mask_register_address                     = 0x0114;
-    u32 correctable_error_mask_register_size                        = 32u;
     u32 correctable_error_mask_register_value                       = 0x000031c1;
+    u32 correctable_error_mask_register_size                        = 32u;
 
     u32 advanced_error_capabilities_and_control_register_address    = 0x0118;
-    u32 advanced_error_capabilities_and_control_register_size       = 32u;
     u32 advanced_error_capabilities_and_control_register_value      = 0x000001e0;
+    u32 advanced_error_capabilities_and_control_register_size       = 32u;
 
-    if (lx2162a_pci_analyzer_periodic_reg_read(&advanced_error_reporting_capability_id_register_value,
-                                                advanced_error_reporting_capability_id_register_address,
-                                                advanced_error_reporting_capability_id_register_size) < 0)
+    u32 root_error_command_register_address                         = 0x012C;
+    u32 root_error_command_register_value                           = 00000007;
+    u32 root_error_command_register_size                            = 32u;
+
+    retval = lx2162a_pci_analyzer_periodic_reg_read(&advanced_error_reporting_capability_id_register_value,
+                                                    advanced_error_reporting_capability_id_register_address,
+                                                    advanced_error_reporting_capability_id_register_size);
+
+    if (retval < 0)
     {
         pr_err("%s:%d:%s: Failed to read advanced error reporting capability register\n", __FILE__, __LINE__, __func__);
-        return -1;
+        return retval;
     }
 
     if (advanced_error_reporting_capability_id_register_value != advanced_error_reporting_capability_id_register_expected)
     {
         pr_err("%s:%d:%s: Advanced error reporting capability not supported\n", __FILE__, __LINE__, __func__);
-        return -2;
+        return -EINVAL;
     }
 
-    if (lx2162a_pci_analyzer_periodic_reg_write(uncorrectable_error_mask_register_value,
-                                                uncorrectable_error_mask_register_address,
-                                                uncorrectable_error_mask_register_size) < 0)
+    retval = lx2162a_pci_analyzer_periodic_reg_write(uncorrectable_error_mask_register_value,
+                                                    uncorrectable_error_mask_register_address,
+                                                    uncorrectable_error_mask_register_size);
+
+    if (retval < 0)
     {
         pr_err("%s:%d:%s: Failed to set uncorrectable error mask register\n", __FILE__, __LINE__, __func__);
-        return -3;
+        return retval;
     }
 
-    if (lx2162a_pci_analyzer_periodic_reg_write(correctable_error_mask_register_value,
-                                                correctable_error_mask_register_address,
-                                                correctable_error_mask_register_size) < 0)
+    retval = lx2162a_pci_analyzer_periodic_reg_write(correctable_error_mask_register_value,
+                                                    correctable_error_mask_register_address,
+                                                    correctable_error_mask_register_size);
+
+    if (retval < 0)
     {
         pr_err("%s:%d:%s: Failed to set correctable error mask register\n", __FILE__, __LINE__, __func__);
-        return -4;
+        return retval;
     }
 
-    if (lx2162a_pci_analyzer_periodic_reg_write(advanced_error_capabilities_and_control_register_address,
-                                                advanced_error_capabilities_and_control_register_size,
-                                                advanced_error_capabilities_and_control_register_value) < 0)
+    retval = lx2162a_pci_analyzer_periodic_reg_write(advanced_error_capabilities_and_control_register_address,
+                                                    advanced_error_capabilities_and_control_register_value,
+                                                    advanced_error_capabilities_and_control_register_size);
+
+    if (retval < 0)
     {
         pr_err("%s:%d:%s: Failed to set advanced error capabilities and control register\n", __FILE__, __LINE__, __func__);
-        return -4;
+        return retval;
+    }
+
+    retval = lx2162a_pci_analyzer_periodic_reg_write(root_error_command_register_address,
+                                                    root_error_command_register_value,
+                                                    root_error_command_register_size);
+
+    if (retval < 0)
+    {
+        pr_err("%s:%d:%s: Failed to set advanced error capabilities and control register\n", __FILE__, __LINE__, __func__);
+        return retval;
     }
 
     return 0;
