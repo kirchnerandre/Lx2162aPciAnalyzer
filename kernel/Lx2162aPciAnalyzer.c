@@ -24,7 +24,7 @@ struct Lx2162aPciAnalyzerData
 };
 
 
-static struct Lx2162aPciAnalyzerData* lx2162a_pci_analyzer_data;
+static struct Lx2162aPciAnalyzerData lx2162a_pci_analyzer_data;
 
 
 static int lx2162a_pci_analyzer_periodic_reg_read(u32* Value, loff_t Offset, size_t Size)
@@ -35,13 +35,13 @@ static int lx2162a_pci_analyzer_periodic_reg_read(u32* Value, loff_t Offset, siz
     {
         u16 value = 0u;
 
-        retval = pci_read_config_word(lx2162a_pci_analyzer_data->PDev, Offset, &value);
+        retval = pci_read_config_word(lx2162a_pci_analyzer_data.PDev, Offset, &value);
 
         *Value = value;
     }
     else if (Size == 32u)
     {
-        retval = pci_read_config_dword(lx2162a_pci_analyzer_data->PDev, Offset, Value);
+        retval = pci_read_config_dword(lx2162a_pci_analyzer_data.PDev, Offset, Value);
     }
     else
     {
@@ -67,11 +67,11 @@ static int lx2162a_pci_analyzer_periodic_reg_write(u32 Value, loff_t Offset, siz
     {
         u16 value = Value;
 
-        retval = pci_write_config_word(lx2162a_pci_analyzer_data->PDev, Offset, value);
+        retval = pci_write_config_word(lx2162a_pci_analyzer_data.PDev, Offset, value);
     }
     else if (Size == 32u)
     {
-        retval = pci_write_config_dword(lx2162a_pci_analyzer_data->PDev, Offset, Value);
+        retval = pci_write_config_dword(lx2162a_pci_analyzer_data.PDev, Offset, Value);
     }
     else
     {
@@ -330,7 +330,7 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
         return;
     }
 
-    schedule_delayed_work(&lx2162a_pci_analyzer_data->DelayedWork, msecs_to_jiffies(1000));
+    schedule_delayed_work(&lx2162a_pci_analyzer_data.DelayedWork, msecs_to_jiffies(1000));
 }
 
 
@@ -349,12 +349,12 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
         return -EINVAL;
     }
 
-    if (offset + sizeof(value) > lx2162a_pci_analyzer_data->Size)
+    if (offset + sizeof(value) > lx2162a_pci_analyzer_data.Size)
     {
         return -EINVAL;
     }
 
-    value = ioread32(lx2162a_pci_analyzer_data->Base + offset);
+    value = ioread32(lx2162a_pci_analyzer_data.Base + offset);
 
     if (copy_to_user(Buffer, &value, sizeof(value)))
     {
@@ -382,7 +382,7 @@ static ssize_t lx2162a_pci_analyzer_write(struct file* File, const char __user* 
         return -EINVAL;
     }
 
-    if (offset + sizeof(value) > lx2162a_pci_analyzer_data->Size)
+    if (offset + sizeof(value) > lx2162a_pci_analyzer_data.Size)
     {
         return -EINVAL;
     }
@@ -392,7 +392,7 @@ static ssize_t lx2162a_pci_analyzer_write(struct file* File, const char __user* 
         return -EFAULT;
     }
 
-    iowrite32(value, lx2162a_pci_analyzer_data->Base + offset);
+    iowrite32(value, lx2162a_pci_analyzer_data.Base + offset);
 
     *Offset += sizeof(value);
 
@@ -433,19 +433,10 @@ static int __init lx2162a_pci_analyzer_init(void)
         return -ENODEV;
     }
 
-    lx2162a_pci_analyzer_data = kzalloc(sizeof(*lx2162a_pci_analyzer_data), GFP_KERNEL);
+    lx2162a_pci_analyzer_data.PDev  = pdev;
 
-    if (!lx2162a_pci_analyzer_data)
-    {
-        pr_err("%s:%d:%s: Failed to allocate memory\n", __FILE__, __LINE__, __func__);
-        pci_dev_put(pdev);
-        return -ENOMEM;
-    }
-
-    lx2162a_pci_analyzer_data->PDev     = pdev;
-
-    flags                               = pci_resource_flags(pdev, bar);
-    lx2162a_pci_analyzer_data->Size     = pci_resource_len  (pdev, bar);
+    flags                           = pci_resource_flags(pdev, bar);
+    lx2162a_pci_analyzer_data.Size  = pci_resource_len  (pdev, bar);
 
     if (!(flags & (IORESOURCE_MEM | IORESOURCE_IO)))
     {
@@ -454,49 +445,47 @@ static int __init lx2162a_pci_analyzer_init(void)
         goto terminate;
     }
 
-    if (!lx2162a_pci_analyzer_data->Size)
+    if (!lx2162a_pci_analyzer_data.Size)
     {
         pr_err("%s:%d:%s: BAR register has length zero\n", __FILE__, __LINE__, __func__);
         retval = -EINVAL;
         goto terminate;
     }
 
-    lx2162a_pci_analyzer_data->Base = pci_iomap(pdev, bar, 0);
+    lx2162a_pci_analyzer_data.Base = pci_iomap(pdev, bar, 0);
 
-    if (!lx2162a_pci_analyzer_data->Base)
+    if (!lx2162a_pci_analyzer_data.Base)
     {
         pr_err("%s:%d:%s: Failed to map BAR register\n", __FILE__, __LINE__, __func__);
         retval = -ENOMEM;
         goto terminate;
     }
 
-    INIT_DELAYED_WORK(&lx2162a_pci_analyzer_data->DelayedWork, lx2162a_pci_analyzer_periodic_work);
+    INIT_DELAYED_WORK(&lx2162a_pci_analyzer_data.DelayedWork, lx2162a_pci_analyzer_periodic_work);
 
     retval = misc_register(&lx2162a_pci_analyzer_miscdev);
 
     if (retval)
     {
         pr_err("%s:%d:%s: Failed to register device\n", __FILE__, __LINE__, __func__);
-        pci_iounmap(pdev, lx2162a_pci_analyzer_data->Base);
+        pci_iounmap(pdev, lx2162a_pci_analyzer_data.Base);
         goto terminate;
     }
 
     if (lx2162a_pci_analyzer_configure())
     {
         pr_err("%s:%d:%s: Failed to configure device\n", __FILE__, __LINE__, __func__);
-        pci_iounmap(pdev, lx2162a_pci_analyzer_data->Base);
+        pci_iounmap(pdev, lx2162a_pci_analyzer_data.Base);
         goto terminate;
     }
 
-    schedule_delayed_work(&lx2162a_pci_analyzer_data->DelayedWork, msecs_to_jiffies(1000));
+    schedule_delayed_work(&lx2162a_pci_analyzer_data.DelayedWork, msecs_to_jiffies(1000));
 
-    pr_info(DRIVER_NAME ": (%04x:%04x) BAR%d start=0x%llx Size=0x%llx flags=0x%lx\n", pdev->vendor, pdev->device, bar, (unsigned long long)pci_resource_start(pdev, bar), (unsigned long long)lx2162a_pci_analyzer_data->Size, flags);
+    pr_info(DRIVER_NAME ": (%04x:%04x) BAR%d start=0x%llx Size=0x%llx flags=0x%lx\n", pdev->vendor, pdev->device, bar, (unsigned long long)pci_resource_start(pdev, bar), (unsigned long long)lx2162a_pci_analyzer_data.Size, flags);
 
 terminate:
     if (retval)
     {
-        kfree(lx2162a_pci_analyzer_data);
-        lx2162a_pci_analyzer_data = NULL;
         pci_dev_put(pdev);
     }
 
@@ -506,26 +495,16 @@ terminate:
 
 static void __exit lx2162a_pci_analyzer_exit(void)
 {
-    if (!lx2162a_pci_analyzer_data)
-    {
-        pr_err("%s:%d:%s: Driver was not loaded\n", __FILE__, __LINE__, __func__);
-        return;
-    }
-
-    cancel_delayed_work_sync(&lx2162a_pci_analyzer_data->DelayedWork);
+    cancel_delayed_work_sync(&lx2162a_pci_analyzer_data.DelayedWork);
 
     misc_deregister(&lx2162a_pci_analyzer_miscdev);
 
-    if (lx2162a_pci_analyzer_data->Base)
+    if (lx2162a_pci_analyzer_data.Base)
     {
-        pci_iounmap(lx2162a_pci_analyzer_data->PDev, lx2162a_pci_analyzer_data->Base);
+        pci_iounmap(lx2162a_pci_analyzer_data.PDev, lx2162a_pci_analyzer_data.Base);
     }
 
-    pci_dev_put(lx2162a_pci_analyzer_data->PDev);
-
-    kfree(lx2162a_pci_analyzer_data);
-
-    lx2162a_pci_analyzer_data = NULL;
+    pci_dev_put(lx2162a_pci_analyzer_data.PDev);
 }
 
 
