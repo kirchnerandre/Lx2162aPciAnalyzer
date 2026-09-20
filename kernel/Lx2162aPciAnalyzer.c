@@ -6,6 +6,7 @@
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/slab.h>
+#include <linux/string.h>
 #include <linux/workqueue.h>
 #include <linux/uaccess.h>
 
@@ -427,67 +428,32 @@ terminate:
 
 static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer, size_t Size, loff_t* Offset)
 {
-    u32             value   = 0;
-    resource_size_t offset  = *Offset;
+    u32 i = 0u;
 
-    if (Size != sizeof(value))
+    while (1)
     {
-        return -EINVAL;
+        if (i >= _SIZE)
+        {
+            break;
+        }
+        else if (i >= lx2162a_pci_analyzer_driver.Offset)
+        {
+            break;
+        }
+
+        if (copy_to_user(&Buffer[i * sizeof(struct Lx2162aPciAnalyzerValues)], &lx2162a_pci_analyzer_values[i], sizeof(struct Lx2162aPciAnalyzerValues)))
+        {
+            return -EFAULT;
+        }
+
+        i++;
     }
 
-    if (offset & 0x3)
-    {
-        return -EINVAL;
-    }
+    memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
 
-    if (offset + sizeof(value) > lx2162a_pci_analyzer_driver.Size)
-    {
-        return -EINVAL;
-    }
+    lx2162a_pci_analyzer_driver.Offset = 0u;
 
-    value = ioread32(lx2162a_pci_analyzer_driver.Base + offset);
-
-    if (copy_to_user(Buffer, &value, sizeof(value)))
-    {
-        return -EFAULT;
-    }
-
-    *Offset += sizeof(value);
-
-    return sizeof(value);
-}
-
-
-static ssize_t lx2162a_pci_analyzer_write(struct file* File, const char __user* Buffer, size_t Size, loff_t* Offset)
-{
-    u32             value   = 0;
-    resource_size_t offset  = *Offset;
-
-    if (Size != sizeof(value))
-    {
-        return -EINVAL;
-    }
-
-    if (offset & 0x3)
-    {
-        return -EINVAL;
-    }
-
-    if (offset + sizeof(value) > lx2162a_pci_analyzer_driver.Size)
-    {
-        return -EINVAL;
-    }
-
-    if (copy_from_user(&value, Buffer, sizeof(value)))
-    {
-        return -EFAULT;
-    }
-
-    iowrite32(value, lx2162a_pci_analyzer_driver.Base + offset);
-
-    *Offset += sizeof(value);
-
-    return sizeof(value);
+    return sizeof(i * sizeof(struct Lx2162aPciAnalyzerValues));
 }
 
 
@@ -495,8 +461,6 @@ static const struct file_operations lx2162a_pci_analyzer_fops =
 {
     .owner  = THIS_MODULE,
     .read   = lx2162a_pci_analyzer_read,
-    .write  = lx2162a_pci_analyzer_write,
-    .llseek = default_llseek,
 };
 
 
