@@ -17,7 +17,7 @@
 #define _SIZE                   300
 
 
-struct Lx2162aPciAnalyzerData
+struct Lx2162aPciAnalyzerDriver
 {
     struct delayed_work DelayedWork;
     struct pci_dev*     PDev;
@@ -27,7 +27,24 @@ struct Lx2162aPciAnalyzerData
 };
 
 
-static struct Lx2162aPciAnalyzerData lx2162a_pci_analyzer_data;
+struct Lx2162aPciAnalyzerValues
+{
+    struct timespec64   Timestamp;
+    u32                 UncorrectableErrorStatusRegister;   // Critical
+    u32                 UncorrectableErrorSeverityRegister;
+    u32                 CorrectableErrorStatusRegister;     // Critical
+    u32                 HeaderLogRegisterDword1;
+    u32                 HeaderLogRegisterDword2;
+    u32                 HeaderLogRegisterDword3;
+    u32                 HeaderLogRegisterDword4;
+    u32                 RootErrorStatusRegister;
+    u32                 CorrectableErrorSourceIdRegister;
+    u32                 ErrorSourceIdRegister;
+    u32                 LaneErrorStatusRegister;            // Critical
+};
+
+
+static struct Lx2162aPciAnalyzerDriver lx2162a_pci_analyzer_driver;
 
 
 static int lx2162a_pci_analyzer_periodic_reg_read(u32* Value, loff_t Offset, size_t Size)
@@ -38,13 +55,13 @@ static int lx2162a_pci_analyzer_periodic_reg_read(u32* Value, loff_t Offset, siz
     {
         u16 value = 0u;
 
-        retval = pci_read_config_word(lx2162a_pci_analyzer_data.PDev, Offset, &value);
+        retval = pci_read_config_word(lx2162a_pci_analyzer_driver.PDev, Offset, &value);
 
         *Value = value;
     }
     else if (Size == 32u)
     {
-        retval = pci_read_config_dword(lx2162a_pci_analyzer_data.PDev, Offset, Value);
+        retval = pci_read_config_dword(lx2162a_pci_analyzer_driver.PDev, Offset, Value);
     }
     else
     {
@@ -70,11 +87,11 @@ static int lx2162a_pci_analyzer_periodic_reg_write(u32 Value, loff_t Offset, siz
     {
         u16 value = Value;
 
-        retval = pci_write_config_word(lx2162a_pci_analyzer_data.PDev, Offset, value);
+        retval = pci_write_config_word(lx2162a_pci_analyzer_driver.PDev, Offset, value);
     }
     else if (Size == 32u)
     {
-        retval = pci_write_config_dword(lx2162a_pci_analyzer_data.PDev, Offset, Value);
+        retval = pci_write_config_dword(lx2162a_pci_analyzer_driver.PDev, Offset, Value);
     }
     else
     {
@@ -271,8 +288,6 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
 
     ktime_get_real_ts64(&time_stamp);
 
-    pr_info(_DRIVER_NAME "lx2162a_pci_analyzer_periodic_work %lld.%09ld\n", (long long)time_stamp.tv_sec, time_stamp.tv_nsec);
-
     if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
             &uncorrectable_error_status_register_value,
             uncorrectable_error_status_register_address,
@@ -280,16 +295,7 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
             uncorrectable_error_status_register_mask) < 0)
     {
         pr_err("%s:%d:%s: Failed to read uncorrectable error status register\n", __FILE__, __LINE__, __func__);
-        return;
-    }
-
-    if (lx2162a_pci_analyzer_periodic_reg_read(
-        &uncorrectable_error_severity_register_value,
-        uncorrectable_error_severity_register_address,
-        uncorrectable_error_severity_register_size) < 0)
-    {
-        pr_err("%s:%d:%s: Failed to read uncorrectable error severity register\n", __FILE__, __LINE__, __func__);
-        return;
+        goto terminate;
     }
 
     if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
@@ -299,70 +305,7 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
         correctable_error_status_register_mask) < 0)
     {
         pr_err("%s:%d:%s: Failed to read correctable error status register\n", __FILE__, __LINE__, __func__);
-        return;
-    }
-
-    if (lx2162a_pci_analyzer_periodic_reg_read(
-        &header_log_register_dword1_value,
-        header_log_register_dword1_address,
-        header_log_register_dword1_size) < 0)
-    {
-        pr_err("%s:%d:%s: Failed to read header log register dword1\n", __FILE__, __LINE__, __func__);
-        return;
-    }
-
-    if (lx2162a_pci_analyzer_periodic_reg_read(
-        &header_log_register_dword2_value,
-        header_log_register_dword2_address,
-        header_log_register_dword2_size) < 0)
-    {
-        pr_err("%s:%d:%s: Failed to read header log register dword2\n", __FILE__, __LINE__, __func__);
-        return;
-    }
-
-    if (lx2162a_pci_analyzer_periodic_reg_read(
-        &header_log_register_dword3_value,
-        header_log_register_dword3_address,
-        header_log_register_dword3_size) < 0)
-    {
-        pr_err("%s:%d:%s: Failed to read header log register dword3\n", __FILE__, __LINE__, __func__);
-        return;
-    }
-
-    if (lx2162a_pci_analyzer_periodic_reg_read(
-        &header_log_register_dword4_value,
-        header_log_register_dword4_address,
-        header_log_register_dword4_size) < 0)
-    {
-        pr_err("%s:%d:%s: Failed to read header log register dword4\n", __FILE__, __LINE__, __func__);
-        return;
-    }
-
-    if (lx2162a_pci_analyzer_periodic_reg_read(
-        &root_error_status_register_value,
-        root_error_status_register_address,
-        root_error_status_register_size) < 0)
-    {
-        pr_err("%s:%d:%s: Failed to read root error status register\n", __FILE__, __LINE__, __func__);
-        return;
-    }
-
-    if (lx2162a_pci_analyzer_periodic_reg_read(
-        &correctable_error_source_id_register_value,
-        correctable_error_source_id_register_address,
-        correctable_error_source_id_register_size) < 0)
-    {
-        pr_err("%s:%d:%s: Failed to read correctable error source id register\n", __FILE__, __LINE__, __func__);
-        return;
-    }
-
-    if (lx2162a_pci_analyzer_periodic_reg_read(
-        &error_source_id_register_value,
-        error_source_id_register_address,
-        error_source_id_register_size) < 0)
-    {
-        pr_err("%s:%d:%s: Failed to read error source id register\n", __FILE__, __LINE__, __func__);
-        return;
+        goto terminate;
     }
 
     if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
@@ -372,10 +315,95 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
         lane_error_status_register_mask) < 0)
     {
         pr_err("%s:%d:%s: Failed to read lane_error status register\n", __FILE__, __LINE__, __func__);
-        return;
+        goto terminate;
     }
 
-    schedule_delayed_work(&lx2162a_pci_analyzer_data.DelayedWork, msecs_to_jiffies(_RESOLUTION));
+    if (((uncorrectable_error_status_register_value  & uncorrectable_error_status_register_mask)    == 0u)
+     && ((correctable_error_status_register_value    & correctable_error_status_register_mask)      == 0u)
+     && ((lane_error_status_register_value           & lane_error_status_register_mask)             == 0u))
+    {
+        pr_info(_DRIVER_NAME " %lld.%09ld No errors\n", (long long)time_stamp.tv_sec, time_stamp.tv_nsec);
+        goto terminate;
+    }
+    else
+    {
+        pr_info(_DRIVER_NAME " %lld.%09ld Has errors\n", (long long)time_stamp.tv_sec, time_stamp.tv_nsec);
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &uncorrectable_error_severity_register_value,
+        uncorrectable_error_severity_register_address,
+        uncorrectable_error_severity_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read uncorrectable error severity register\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &header_log_register_dword1_value,
+        header_log_register_dword1_address,
+        header_log_register_dword1_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read header log register dword1\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &header_log_register_dword2_value,
+        header_log_register_dword2_address,
+        header_log_register_dword2_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read header log register dword2\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &header_log_register_dword3_value,
+        header_log_register_dword3_address,
+        header_log_register_dword3_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read header log register dword3\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &header_log_register_dword4_value,
+        header_log_register_dword4_address,
+        header_log_register_dword4_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read header log register dword4\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &root_error_status_register_value,
+        root_error_status_register_address,
+        root_error_status_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read root error status register\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &correctable_error_source_id_register_value,
+        correctable_error_source_id_register_address,
+        correctable_error_source_id_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read correctable error source id register\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read(
+        &error_source_id_register_value,
+        error_source_id_register_address,
+        error_source_id_register_size) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read error source id register\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+terminate:
+    schedule_delayed_work(&lx2162a_pci_analyzer_driver.DelayedWork, msecs_to_jiffies(_RESOLUTION));
 }
 
 
@@ -394,12 +422,12 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
         return -EINVAL;
     }
 
-    if (offset + sizeof(value) > lx2162a_pci_analyzer_data.Size)
+    if (offset + sizeof(value) > lx2162a_pci_analyzer_driver.Size)
     {
         return -EINVAL;
     }
 
-    value = ioread32(lx2162a_pci_analyzer_data.Base + offset);
+    value = ioread32(lx2162a_pci_analyzer_driver.Base + offset);
 
     if (copy_to_user(Buffer, &value, sizeof(value)))
     {
@@ -427,7 +455,7 @@ static ssize_t lx2162a_pci_analyzer_write(struct file* File, const char __user* 
         return -EINVAL;
     }
 
-    if (offset + sizeof(value) > lx2162a_pci_analyzer_data.Size)
+    if (offset + sizeof(value) > lx2162a_pci_analyzer_driver.Size)
     {
         return -EINVAL;
     }
@@ -437,7 +465,7 @@ static ssize_t lx2162a_pci_analyzer_write(struct file* File, const char __user* 
         return -EFAULT;
     }
 
-    iowrite32(value, lx2162a_pci_analyzer_data.Base + offset);
+    iowrite32(value, lx2162a_pci_analyzer_driver.Base + offset);
 
     *Offset += sizeof(value);
 
@@ -468,18 +496,18 @@ static int __init lx2162a_pci_analyzer_init(void)
     unsigned long   flags   = 0u;
     int             retval  = 0;
 
-    lx2162a_pci_analyzer_data.Offset = 0u;
+    lx2162a_pci_analyzer_driver.Offset = 0u;
 
-    lx2162a_pci_analyzer_data.PDev = pci_get_device(_LX2162A_PCI_VENDOR_ID, _LX2162A_PCI_DEVICE_ID, NULL);
+    lx2162a_pci_analyzer_driver.PDev = pci_get_device(_LX2162A_PCI_VENDOR_ID, _LX2162A_PCI_DEVICE_ID, NULL);
 
-    if (!lx2162a_pci_analyzer_data.PDev)
+    if (!lx2162a_pci_analyzer_driver.PDev)
     {
         pr_err("%s:%d:%s: Device not found\n", __FILE__, __LINE__, __func__);
         return -ENODEV;
     }
 
-    flags                           = pci_resource_flags(lx2162a_pci_analyzer_data.PDev, 0);
-    lx2162a_pci_analyzer_data.Size  = pci_resource_len  (lx2162a_pci_analyzer_data.PDev, 0);
+    flags                               = pci_resource_flags(lx2162a_pci_analyzer_driver.PDev, 0);
+    lx2162a_pci_analyzer_driver.Size    = pci_resource_len  (lx2162a_pci_analyzer_driver.PDev, 0);
 
     if (!(flags & (IORESOURCE_MEM | IORESOURCE_IO)))
     {
@@ -488,53 +516,53 @@ static int __init lx2162a_pci_analyzer_init(void)
         goto terminate;
     }
 
-    if (!lx2162a_pci_analyzer_data.Size)
+    if (!lx2162a_pci_analyzer_driver.Size)
     {
         pr_err("%s:%d:%s: BAR register has length zero\n", __FILE__, __LINE__, __func__);
         retval = -EINVAL;
         goto terminate;
     }
 
-    lx2162a_pci_analyzer_data.Base = pci_iomap(lx2162a_pci_analyzer_data.PDev, 0, 0);
+    lx2162a_pci_analyzer_driver.Base = pci_iomap(lx2162a_pci_analyzer_driver.PDev, 0, 0);
 
-    if (!lx2162a_pci_analyzer_data.Base)
+    if (!lx2162a_pci_analyzer_driver.Base)
     {
         pr_err("%s:%d:%s: Failed to map BAR register\n", __FILE__, __LINE__, __func__);
         retval = -ENOMEM;
         goto terminate;
     }
 
-    INIT_DELAYED_WORK(&lx2162a_pci_analyzer_data.DelayedWork, lx2162a_pci_analyzer_periodic_work);
+    INIT_DELAYED_WORK(&lx2162a_pci_analyzer_driver.DelayedWork, lx2162a_pci_analyzer_periodic_work);
 
     retval = misc_register(&lx2162a_pci_analyzer_miscdev);
 
     if (retval)
     {
         pr_err("%s:%d:%s: Failed to register device\n", __FILE__, __LINE__, __func__);
-        pci_iounmap(lx2162a_pci_analyzer_data.PDev, lx2162a_pci_analyzer_data.Base);
+        pci_iounmap(lx2162a_pci_analyzer_driver.PDev, lx2162a_pci_analyzer_driver.Base);
         goto terminate;
     }
 
     if (lx2162a_pci_analyzer_configure())
     {
         pr_err("%s:%d:%s: Failed to configure device\n", __FILE__, __LINE__, __func__);
-        pci_iounmap(lx2162a_pci_analyzer_data.PDev, lx2162a_pci_analyzer_data.Base);
+        pci_iounmap(lx2162a_pci_analyzer_driver.PDev, lx2162a_pci_analyzer_driver.Base);
         goto terminate;
     }
 
-    schedule_delayed_work(&lx2162a_pci_analyzer_data.DelayedWork, msecs_to_jiffies(_RESOLUTION));
+    schedule_delayed_work(&lx2162a_pci_analyzer_driver.DelayedWork, msecs_to_jiffies(_RESOLUTION));
 
     pr_info(
         _DRIVER_NAME ": (%04x:%04x) start=0x%llx Size=0x%llx flags=0x%lx\n",
-        lx2162a_pci_analyzer_data.PDev->vendor,
-        lx2162a_pci_analyzer_data.PDev->device,
-        (unsigned long long)pci_resource_start(lx2162a_pci_analyzer_data.PDev, 0),
-        (unsigned long long)lx2162a_pci_analyzer_data.Size, flags);
+        lx2162a_pci_analyzer_driver.PDev->vendor,
+        lx2162a_pci_analyzer_driver.PDev->device,
+        (unsigned long long)pci_resource_start(lx2162a_pci_analyzer_driver.PDev, 0),
+        (unsigned long long)lx2162a_pci_analyzer_driver.Size, flags);
 
 terminate:
     if (retval)
     {
-        pci_dev_put(lx2162a_pci_analyzer_data.PDev);
+        pci_dev_put(lx2162a_pci_analyzer_driver.PDev);
     }
 
     return retval;
@@ -543,16 +571,16 @@ terminate:
 
 static void __exit lx2162a_pci_analyzer_exit(void)
 {
-    cancel_delayed_work_sync(&lx2162a_pci_analyzer_data.DelayedWork);
+    cancel_delayed_work_sync(&lx2162a_pci_analyzer_driver.DelayedWork);
 
     misc_deregister(&lx2162a_pci_analyzer_miscdev);
 
-    if (lx2162a_pci_analyzer_data.Base)
+    if (lx2162a_pci_analyzer_driver.Base)
     {
-        pci_iounmap(lx2162a_pci_analyzer_data.PDev, lx2162a_pci_analyzer_data.Base);
+        pci_iounmap(lx2162a_pci_analyzer_driver.PDev, lx2162a_pci_analyzer_driver.Base);
     }
 
-    pci_dev_put(lx2162a_pci_analyzer_data.PDev);
+    pci_dev_put(lx2162a_pci_analyzer_driver.PDev);
 }
 
 
