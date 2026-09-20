@@ -47,6 +47,9 @@ struct Lx2162aPciAnalyzerValues
 static struct Lx2162aPciAnalyzerDriver lx2162a_pci_analyzer_driver;
 
 
+static struct Lx2162aPciAnalyzerValues lx2162a_pci_analyzer_values[_SIZE];
+
+
 static int lx2162a_pci_analyzer_periodic_reg_read(u32* Value, loff_t Offset, size_t Size)
 {
     int retval = 0;
@@ -401,6 +404,21 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
         pr_err("%s:%d:%s: Failed to read error source id register\n", __FILE__, __LINE__, __func__);
         goto terminate;
     }
+
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].Timestamp                             = time_stamp;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].UncorrectableErrorStatusRegister      = uncorrectable_error_status_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].UncorrectableErrorSeverityRegister    = uncorrectable_error_severity_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].CorrectableErrorStatusRegister        = correctable_error_status_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].HeaderLogRegisterDword1               = header_log_register_dword1_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].HeaderLogRegisterDword2               = header_log_register_dword2_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].HeaderLogRegisterDword3               = header_log_register_dword3_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].HeaderLogRegisterDword4               = header_log_register_dword4_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].RootErrorStatusRegister               = root_error_status_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].CorrectableErrorSourceIdRegister      = correctable_error_source_id_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].ErrorSourceIdRegister                 = error_source_id_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset++ % _SIZE].LaneErrorStatusRegister               = lane_error_status_register_value;
+
+    lx2162a_pci_analyzer_driver.Offset++;
 
 terminate:
     schedule_delayed_work(&lx2162a_pci_analyzer_driver.DelayedWork, msecs_to_jiffies(_RESOLUTION));
