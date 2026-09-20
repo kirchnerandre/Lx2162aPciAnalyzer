@@ -4,6 +4,7 @@
 #include <linux/kernel.h>
 #include <linux/miscdevice.h>
 #include <linux/module.h>
+#include <linux/mutex.h>
 #include <linux/pci.h>
 #include <linux/slab.h>
 #include <linux/string.h>
@@ -22,6 +23,7 @@ struct Lx2162aPciAnalyzerDriver
 {
     struct delayed_work DelayedWork;
     struct pci_dev*     PDev;
+    struct mutex        Mutex;
     void __iomem*       Base;
     resource_size_t     Size;
     u32                 Offset;
@@ -290,6 +292,8 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
 
     struct timespec64 time_stamp;
 
+    mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
+
     ktime_get_real_ts64(&time_stamp);
 
     if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
@@ -422,6 +426,8 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
     lx2162a_pci_analyzer_driver.Offset++;
 
 terminate:
+    mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
+
     schedule_delayed_work(&lx2162a_pci_analyzer_driver.DelayedWork, msecs_to_jiffies(_RESOLUTION));
 }
 
@@ -429,6 +435,8 @@ terminate:
 static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer, size_t Size, loff_t* Offset)
 {
     u32 i = 0u;
+
+    mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
 
     while (1)
     {
@@ -452,6 +460,8 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
 
     lx2162a_pci_analyzer_driver.Offset = 0u;
+
+    mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
 
     return sizeof(i * sizeof(struct Lx2162aPciAnalyzerValues));
 }
@@ -479,6 +489,8 @@ static int __init lx2162a_pci_analyzer_init(void)
     int             retval  = 0;
 
     lx2162a_pci_analyzer_driver.Offset = 0u;
+
+    mutex_init(&lx2162a_pci_analyzer_driver.Mutex);
 
     lx2162a_pci_analyzer_driver.PDev = pci_get_device(_LX2162A_PCI_VENDOR_ID, _LX2162A_PCI_DEVICE_ID, NULL);
 
