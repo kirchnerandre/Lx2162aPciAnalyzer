@@ -10,9 +10,9 @@
 #include <linux/uaccess.h>
 
 
-#define DRIVER_NAME                                                 "Lx2162aPciAnalyzer"
-#define LX2162A_PCI_VENDOR_ID                                       0x1414
-#define LX2162A_PCI_DEVICE_ID                                       0x00b9
+#define DRIVER_NAME             "Lx2162aPciAnalyzer"
+#define LX2162A_PCI_VENDOR_ID   0x1414
+#define LX2162A_PCI_DEVICE_ID   0x00b9
 
 
 struct Lx2162aPciAnalyzerData
@@ -85,6 +85,31 @@ static int lx2162a_pci_analyzer_periodic_reg_write(u32 Value, loff_t Offset, siz
         return retval;
     }
 
+    return retval;
+}
+
+
+static int lx2162a_pci_analyzer_periodic_reg_read_and_clean(u32* Value, loff_t Offset, size_t Size, u32 Mask)
+{
+    int retval = 0;
+
+    retval = lx2162a_pci_analyzer_periodic_reg_read(Value, Offset, Size);
+
+    if (retval < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read register\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+    retval = lx2162a_pci_analyzer_periodic_reg_write(Mask, Offset, Size);
+
+    if (retval < 0)
+    {
+        pr_err("%s:%d:%s: Failed to write register\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+terminate:
     return retval;
 }
 
@@ -181,49 +206,63 @@ static int lx2162a_pci_analyzer_configure(void)
 
 static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
 {
+    // W1C
     u32 uncorrectable_error_status_register_value       = 0u;
     u32 uncorrectable_error_status_register_address     = 0x0104;
     u32 uncorrectable_error_status_register_size        = 32u;
+    u32 uncorrectable_error_status_register_mask        = 0x001ff010;
 
+    // RO
     u32 uncorrectable_error_severity_register_value     = 0u;
     u32 uncorrectable_error_severity_register_address   = 0x010C;
     u32 uncorrectable_error_severity_register_size      = 32u;
 
+    // W1C
     u32 correctable_error_status_register_value         = 0u;
     u32 correctable_error_status_register_address       = 0x0110;
     u32 correctable_error_status_register_size          = 32u;
+    u32 correctable_error_status_register_mask          = 0x000031c1;
 
+    // RO
     u32 header_log_register_dword1_value                = 0u;
     u32 header_log_register_dword1_address              = 0x011C;
     u32 header_log_register_dword1_size                 = 32u;
 
+    // RO
     u32 header_log_register_dword2_value                = 0u;
     u32 header_log_register_dword2_address              = 0x0120;
     u32 header_log_register_dword2_size                 = 32u;
 
+    // RO
     u32 header_log_register_dword3_value                = 0u;
     u32 header_log_register_dword3_address              = 0x0124;
     u32 header_log_register_dword3_size                 = 32u;
 
+    // RO
     u32 header_log_register_dword4_value                = 0u;
     u32 header_log_register_dword4_address              = 0x0128;
     u32 header_log_register_dword4_size                 = 32u;
 
+    // W1C
     u32 root_error_status_register_value                = 0u;
     u32 root_error_status_register_address              = 0x0130;
     u32 root_error_status_register_size                 = 32u;
 
+    // RO
     u32 correctable_error_source_id_register_value      = 0u;
     u32 correctable_error_source_id_register_address    = 0x0134;
     u32 correctable_error_source_id_register_size       = 16u;
 
+    // RO
     u32 error_source_id_register_value                  = 0u;
     u32 error_source_id_register_address                = 0x0136;
     u32 error_source_id_register_size                   = 16u;
 
+    // W1C
     u32 lane_error_status_register_value                = 0u;
     u32 lane_error_status_register_address              = 0x0160;
     u32 lane_error_status_register_size                 = 32u;
+    u32 lane_error_status_register_mask                 = 0x000000ff;
 
     struct timespec64 time_stamp;
 
@@ -231,10 +270,11 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
 
     pr_info(DRIVER_NAME "lx2162a_pci_analyzer_periodic_work %lld.%09ld\n", (long long)time_stamp.tv_sec, time_stamp.tv_nsec);
 
-    if (lx2162a_pci_analyzer_periodic_reg_read(
+    if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
             &uncorrectable_error_status_register_value,
             uncorrectable_error_status_register_address,
-            uncorrectable_error_status_register_size) < 0)
+            uncorrectable_error_status_register_size,
+            uncorrectable_error_status_register_mask) < 0)
     {
         pr_err("%s:%d:%s: Failed to read uncorrectable error status register\n", __FILE__, __LINE__, __func__);
         return;
@@ -249,10 +289,11 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
         return;
     }
 
-    if (lx2162a_pci_analyzer_periodic_reg_read(
+    if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
         &correctable_error_status_register_value,
         correctable_error_status_register_address,
-        correctable_error_status_register_size) < 0)
+        correctable_error_status_register_size,
+        correctable_error_status_register_mask) < 0)
     {
         pr_err("%s:%d:%s: Failed to read correctable error status register\n", __FILE__, __LINE__, __func__);
         return;
@@ -321,10 +362,11 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
         return;
     }
 
-    if (lx2162a_pci_analyzer_periodic_reg_read(
+    if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
         &lane_error_status_register_value,
         lane_error_status_register_address,
-        lane_error_status_register_size) < 0)
+        lane_error_status_register_size,
+        lane_error_status_register_mask) < 0)
     {
         pr_err("%s:%d:%s: Failed to read lane_error status register\n", __FILE__, __LINE__, __func__);
         return;
