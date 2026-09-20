@@ -10,9 +10,11 @@
 #include <linux/uaccess.h>
 
 
-#define DRIVER_NAME             "Lx2162aPciAnalyzer"
-#define LX2162A_PCI_VENDOR_ID   0x1414
-#define LX2162A_PCI_DEVICE_ID   0x00b9
+#define _DRIVER_NAME            "Lx2162aPciAnalyzer"
+#define _LX2162A_PCI_VENDOR_ID  0x1414
+#define _LX2162A_PCI_DEVICE_ID  0x00b9
+#define _RESOLUTION             1000
+#define _SIZE                   300
 
 
 struct Lx2162aPciAnalyzerData
@@ -21,6 +23,7 @@ struct Lx2162aPciAnalyzerData
     struct pci_dev*     PDev;
     void __iomem*       Base;
     resource_size_t     Size;
+    u32                 Offset;
 };
 
 
@@ -268,7 +271,7 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
 
     ktime_get_real_ts64(&time_stamp);
 
-    pr_info(DRIVER_NAME "lx2162a_pci_analyzer_periodic_work %lld.%09ld\n", (long long)time_stamp.tv_sec, time_stamp.tv_nsec);
+    pr_info(_DRIVER_NAME "lx2162a_pci_analyzer_periodic_work %lld.%09ld\n", (long long)time_stamp.tv_sec, time_stamp.tv_nsec);
 
     if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
             &uncorrectable_error_status_register_value,
@@ -372,7 +375,7 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
         return;
     }
 
-    schedule_delayed_work(&lx2162a_pci_analyzer_data.DelayedWork, msecs_to_jiffies(1000));
+    schedule_delayed_work(&lx2162a_pci_analyzer_data.DelayedWork, msecs_to_jiffies(_RESOLUTION));
 }
 
 
@@ -462,23 +465,21 @@ static struct miscdevice lx2162a_pci_analyzer_miscdev =
 
 static int __init lx2162a_pci_analyzer_init(void)
 {
-    struct pci_dev* pdev    = NULL;
-    unsigned long   flags   = 0;
-    int             bar     = 0;
+    unsigned long   flags   = 0u;
     int             retval  = 0;
 
-    pdev = pci_get_device(LX2162A_PCI_VENDOR_ID, LX2162A_PCI_DEVICE_ID, NULL);
+    lx2162a_pci_analyzer_data.Offset = 0u;
 
-    if (!pdev)
+    lx2162a_pci_analyzer_data.PDev = pci_get_device(_LX2162A_PCI_VENDOR_ID, _LX2162A_PCI_DEVICE_ID, NULL);
+
+    if (!lx2162a_pci_analyzer_data.PDev)
     {
         pr_err("%s:%d:%s: Device not found\n", __FILE__, __LINE__, __func__);
         return -ENODEV;
     }
 
-    lx2162a_pci_analyzer_data.PDev  = pdev;
-
-    flags                           = pci_resource_flags(pdev, bar);
-    lx2162a_pci_analyzer_data.Size  = pci_resource_len  (pdev, bar);
+    flags                           = pci_resource_flags(lx2162a_pci_analyzer_data.PDev, 0);
+    lx2162a_pci_analyzer_data.Size  = pci_resource_len  (lx2162a_pci_analyzer_data.PDev, 0);
 
     if (!(flags & (IORESOURCE_MEM | IORESOURCE_IO)))
     {
@@ -494,7 +495,7 @@ static int __init lx2162a_pci_analyzer_init(void)
         goto terminate;
     }
 
-    lx2162a_pci_analyzer_data.Base = pci_iomap(pdev, bar, 0);
+    lx2162a_pci_analyzer_data.Base = pci_iomap(lx2162a_pci_analyzer_data.PDev, 0, 0);
 
     if (!lx2162a_pci_analyzer_data.Base)
     {
@@ -510,25 +511,30 @@ static int __init lx2162a_pci_analyzer_init(void)
     if (retval)
     {
         pr_err("%s:%d:%s: Failed to register device\n", __FILE__, __LINE__, __func__);
-        pci_iounmap(pdev, lx2162a_pci_analyzer_data.Base);
+        pci_iounmap(lx2162a_pci_analyzer_data.PDev, lx2162a_pci_analyzer_data.Base);
         goto terminate;
     }
 
     if (lx2162a_pci_analyzer_configure())
     {
         pr_err("%s:%d:%s: Failed to configure device\n", __FILE__, __LINE__, __func__);
-        pci_iounmap(pdev, lx2162a_pci_analyzer_data.Base);
+        pci_iounmap(lx2162a_pci_analyzer_data.PDev, lx2162a_pci_analyzer_data.Base);
         goto terminate;
     }
 
-    schedule_delayed_work(&lx2162a_pci_analyzer_data.DelayedWork, msecs_to_jiffies(1000));
+    schedule_delayed_work(&lx2162a_pci_analyzer_data.DelayedWork, msecs_to_jiffies(_RESOLUTION));
 
-    pr_info(DRIVER_NAME ": (%04x:%04x) BAR%d start=0x%llx Size=0x%llx flags=0x%lx\n", pdev->vendor, pdev->device, bar, (unsigned long long)pci_resource_start(pdev, bar), (unsigned long long)lx2162a_pci_analyzer_data.Size, flags);
+    pr_info(
+        _DRIVER_NAME ": (%04x:%04x) start=0x%llx Size=0x%llx flags=0x%lx\n",
+        lx2162a_pci_analyzer_data.PDev->vendor,
+        lx2162a_pci_analyzer_data.PDev->device,
+        (unsigned long long)pci_resource_start(lx2162a_pci_analyzer_data.PDev, 0),
+        (unsigned long long)lx2162a_pci_analyzer_data.Size, flags);
 
 terminate:
     if (retval)
     {
-        pci_dev_put(pdev);
+        pci_dev_put(lx2162a_pci_analyzer_data.PDev);
     }
 
     return retval;
