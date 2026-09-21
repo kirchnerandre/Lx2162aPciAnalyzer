@@ -434,30 +434,37 @@ terminate:
 
 static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer, size_t Size, loff_t* Offset)
 {
-    u32 i = 0u;
-
-pr_info(_DRIVER_NAME " lx2162a_pci_analyzer_read\n");
+    u32 offset  = 0u;
+    u32 size    = 0u;
+    u32 version = 1u;
 
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
 
-    while (1)
+    if (copy_to_user(&Buffer[offset], &version, sizeof(version)))
     {
-        if (i >= _SIZE)
-        {
-            break;
-        }
-        else if (i >= lx2162a_pci_analyzer_driver.Offset)
-        {
-            break;
-        }
+        mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
+        pr_err("%s:%d:%s: Failed to copy version\n", __FILE__, __LINE__, __func__);
+        return -EFAULT;
+    }
 
-        if (copy_to_user(&Buffer[i * sizeof(struct Lx2162aPciAnalyzerValues)], &lx2162a_pci_analyzer_values[i], sizeof(struct Lx2162aPciAnalyzerValues)))
-        {
-            mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
-            return -EFAULT;
-        }
+    offset += sizeof(version);
 
-        i++;
+    size = _SIZE < lx2162a_pci_analyzer_driver.Offset ? _SIZE : lx2162a_pci_analyzer_driver.Offset;
+
+    if (copy_to_user(&Buffer[offset], &size, sizeof(size)))
+    {
+        mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
+        pr_err("%s:%d:%s: Failed to copy size\n", __FILE__, __LINE__, __func__);
+        return -EFAULT;
+    }
+
+    offset += sizeof(size);
+
+    if (copy_to_user(&Buffer[offset], lx2162a_pci_analyzer_values, sizeof(lx2162a_pci_analyzer_values)))
+    {
+        mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
+        pr_err("%s:%d:%s: Failed to copy data\n", __FILE__, __LINE__, __func__);
+        return -EFAULT;
     }
 
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
@@ -588,4 +595,4 @@ module_exit(lx2162a_pci_analyzer_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Andre Kirchner");
 MODULE_DESCRIPTION("Monitor SoC PCIe state");
-MODULE_VERSION("0.01");
+MODULE_VERSION("1");
