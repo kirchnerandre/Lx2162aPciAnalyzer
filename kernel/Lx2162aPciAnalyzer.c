@@ -436,6 +436,8 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 {
     u32 i = 0u;
 
+pr_info(_DRIVER_NAME " lx2162a_pci_analyzer_read\n");
+
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
 
     while (1)
@@ -451,6 +453,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         if (copy_to_user(&Buffer[i * sizeof(struct Lx2162aPciAnalyzerValues)], &lx2162a_pci_analyzer_values[i], sizeof(struct Lx2162aPciAnalyzerValues)))
         {
+            mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
             return -EFAULT;
         }
 
@@ -463,7 +466,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
     mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
 
-    return sizeof(i * sizeof(struct Lx2162aPciAnalyzerValues));
+    return 0;
 }
 
 
@@ -477,7 +480,7 @@ static const struct file_operations lx2162a_pci_analyzer_fops =
 static struct miscdevice lx2162a_pci_analyzer_miscdev =
 {
     .minor  = MISC_DYNAMIC_MINOR,
-    .name   = "Lx2162aPciAnalyzer",
+    .name   = _DRIVER_NAME,
     .fops   = &lx2162a_pci_analyzer_fops,
     .mode   = 0444,
 };
