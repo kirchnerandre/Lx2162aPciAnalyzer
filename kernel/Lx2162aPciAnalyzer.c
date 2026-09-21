@@ -434,17 +434,23 @@ terminate:
 
 static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer, size_t Size, loff_t* Offset)
 {
-    u32 offset  = 0u;
-    u32 size    = 0u;
-    u32 version = 1u;
+    ssize_t retval  = 0;
+    u32     offset  = 0u;
+    u32     size    = 0u;
+    u32     version = 1u;
 
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
 
+    if (!lx2162a_pci_analyzer_driver.Offset)
+    {
+        goto terminate;
+    }
+
     if (copy_to_user(&Buffer[offset], &version, sizeof(version)))
     {
-        mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
         pr_err("%s:%d:%s: Failed to copy version\n", __FILE__, __LINE__, __func__);
-        return -EFAULT;
+        retval = -EFAULT;
+        goto terminate;
     }
 
     offset += sizeof(version);
@@ -453,27 +459,28 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
     if (copy_to_user(&Buffer[offset], &size, sizeof(size)))
     {
-        mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
         pr_err("%s:%d:%s: Failed to copy size\n", __FILE__, __LINE__, __func__);
-        return -EFAULT;
+        retval = -EFAULT;
+        goto terminate;
     }
 
     offset += sizeof(size);
 
     if (copy_to_user(&Buffer[offset], lx2162a_pci_analyzer_values, sizeof(lx2162a_pci_analyzer_values)))
     {
-        mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
         pr_err("%s:%d:%s: Failed to copy data\n", __FILE__, __LINE__, __func__);
-        return -EFAULT;
+        retval = -EFAULT;
+        goto terminate;
     }
 
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
 
     lx2162a_pci_analyzer_driver.Offset = 0u;
 
+terminate:
     mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
 
-    return 0;
+    return retval;
 }
 
 
