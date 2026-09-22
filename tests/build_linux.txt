@@ -22,6 +22,8 @@ cd Lx2162aPciAnalyzer
 
 git submodule update --init ./tests/qemu
 
+cd tests
+
 ./setup.sh
 
 cd qemu/build
