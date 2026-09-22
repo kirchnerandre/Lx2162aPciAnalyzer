@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 
 rm -fR ./qemu/hw/misc/ls2162a_device    2> /dev/null
 
