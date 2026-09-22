@@ -63,6 +63,21 @@ static void device_init(PCIDevice* PciDevice, Error** Error)
 
     PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_PPB_EXTENSIONS]   = 0x00;
     PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_DATA_REGISTER]    = 0x00;
+
+    u32 advanced_error_reporting_capability_id      = 0x0100;
+    u32 advanced_error_reporting_capability_version = 1;
+    u32 advanced_error_reporting_capability_offset  = 0x0100;
+    u32 advanced_error_reporting_capability_size    = 32;
+
+    pcie_add_capability(
+        PciDevice,
+        advanced_error_reporting_capability_id,
+        advanced_error_reporting_capability_version,
+        advanced_error_reporting_capability_offset,
+        advanced_error_reporting_capability_size);
+
+    pci_set_long(dev->config + advanced_error_reporting_capability_offset + 0x04, 0x00000001);
+
 }
 
 
