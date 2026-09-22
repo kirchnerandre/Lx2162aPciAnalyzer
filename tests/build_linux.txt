@@ -35,6 +35,4 @@ sudo ./qemu-system-x86_64 \
     -drive file=/mnt/d/Users/ankirchner/_Projects/vhd_server_serverdatacenter_en-us_vl_linux/26101.1068.amd64fre.ge_release_azcc_r1.250522-1447_server_serverdatacenter_en-us_vl.vhd,format=vpc \
     -machine q35,accel=kvm \
     -device VGA \
-    -device pci_d3_broken_0,id=pci_d3_broken_0,bus=pcie.0,addr=0x10 \
-    -device pci_d3_broken_1,id=pci_d3_broken_1,bus=pcie.0,addr=0x11 \
-    -device pci_d3_good,id=pci_d3_good,bus=pcie.0,addr=0x12
+    -device lx2162a_device,id=lx2162a_device,bus=pcie.0,addr=0x10
