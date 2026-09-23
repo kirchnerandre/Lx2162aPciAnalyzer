@@ -1,8 +1,6 @@
-﻿#!/bin/bash
+#!/bin/bash
 
-rm -fR  ./qemu/hw/misc/D3Broken_0   2> /dev/null
-rm -fR  ./qemu/hw/misc/D3Broken_1   2> /dev/null
-rm -fR  ./qemu/hw/misc/D3Good       2> /dev/null
+rm -fR ./qemu/hw/misc/ls2162a_device    2> /dev/null
 
 if [ -d ./qemu ]
 then
@@ -18,20 +16,15 @@ then
     rm -fR ./qemu/build
 fi
 
-REPOSITORY_DIR=$(git rev-parse --show-toplevel)
+echo "source lx2162a_device/Kconfig"    >> ./qemu/hw/misc/Kconfig
+echo "subdir('lx2162a_device')"         >> ./qemu/hw/misc/meson.build
 
-echo "source D3Broken_0/Kconfig"    >> ./qemu/hw/misc/Kconfig
-echo "subdir('D3Broken_0')"         >> ./qemu/hw/misc/meson.build
+mkdir ./qemu/hw/misc/lx2162a_device
 
-echo "source D3Broken_1/Kconfig"    >> ./qemu/hw/misc/Kconfig
-echo "subdir('D3Broken_1')"         >> ./qemu/hw/misc/meson.build
-
-echo "source D3Good/Kconfig"        >> ./qemu/hw/misc/Kconfig
-echo "subdir('D3Good')"             >> ./qemu/hw/misc/meson.build
-
-ln -s $REPOSITORY_DIR/D3Broken_0/   $REPOSITORY_DIR/qemu/hw/misc
-ln -s $REPOSITORY_DIR/D3Broken_1/   $REPOSITORY_DIR/qemu/hw/misc
-ln -s $REPOSITORY_DIR/D3Good/       $REPOSITORY_DIR/qemu/hw/misc
+cp ./lx2162a_device.h   ./qemu/hw/misc/lx2162a_device/lx2162a_device.h
+cp ./lx2162a_device.c   ./qemu/hw/misc/lx2162a_device/lx2162a_device.c
+cp ./Kconfig            ./qemu/hw/misc/lx2162a_device/Kconfig
+cp ./meson.build        ./qemu/hw/misc/lx2162a_device/meson.build
 
 pushd ./
 cd ./qemu
