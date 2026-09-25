@@ -1,5 +1,5 @@
 
-#include "pci_d3_good.h"
+#include "lx2162a_pci_device.h"
 
 
 static uint32_t config_read(PCIDevice* PciDevice, uint32_t Address, int Length)
