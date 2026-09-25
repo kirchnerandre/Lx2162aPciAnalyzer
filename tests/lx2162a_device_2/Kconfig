@@ -1,0 +1,4 @@
+config CONFIG_LX2162A_DEVICE_2
+    bool
+    default y if TEST_DEVICES
+    depends on PCI_EXPRESS && MSI_NONBROKEN
