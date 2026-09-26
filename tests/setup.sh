@@ -2,7 +2,7 @@
 
 REPOSITORY_DIR=$(git rev-parse --show-toplevel)
 
-rm -fR ./qemu/build                     2> /dev/null
+rm -fR ./qemu/build                             2> /dev/null
 
 if [ -d ./qemu ]
 then
@@ -13,10 +13,10 @@ then
     popd
 fi
 
-echo "source D3Good/Kconfig"            >> ./qemu/hw/misc/Kconfig
-echo "subdir('D3Good')"                 >> ./qemu/hw/misc/meson.build
+echo "source lx2162a_pci_device/Kconfig"        >> ./qemu/hw/misc/Kconfig
+echo "subdir('lx2162a_pci_device')"             >> ./qemu/hw/misc/meson.build
 
-ln -s $REPOSITORY_DIR/tests/D3Good      $REPOSITORY_DIR/tests/qemu/hw/misc
+ln -s $REPOSITORY_DIR/tests/lx2162a_pci_device  $REPOSITORY_DIR/tests/qemu/hw/misc
 
 pushd ./
 cd ./qemu
