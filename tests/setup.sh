@@ -1,6 +1,8 @@
 #!/bin/bash
 
-rm -fR ./qemu/hw/misc/ls2162a_device    2> /dev/null
+REPOSITORY_DIR=$(git rev-parse --show-toplevel)
+
+rm -fR ./qemu/build                             2> /dev/null
 
 if [ -d ./qemu ]
 then
@@ -11,20 +13,10 @@ then
     popd
 fi
 
-if [ -d ./qemu/build ]
-then
-    rm -fR ./qemu/build
-fi
+echo "source lx2162a_pci_device/Kconfig"        >> ./qemu/hw/misc/Kconfig
+echo "subdir('lx2162a_pci_device')"             >> ./qemu/hw/misc/meson.build
 
-echo "source lx2162a_device/Kconfig"    >> ./qemu/hw/misc/Kconfig
-echo "subdir('lx2162a_device')"         >> ./qemu/hw/misc/meson.build
-
-mkdir ./qemu/hw/misc/lx2162a_device
-
-cp ./lx2162a_device.h   ./qemu/hw/misc/lx2162a_device/lx2162a_device.h
-cp ./lx2162a_device.c   ./qemu/hw/misc/lx2162a_device/lx2162a_device.c
-cp ./Kconfig            ./qemu/hw/misc/lx2162a_device/Kconfig
-cp ./meson.build        ./qemu/hw/misc/lx2162a_device/meson.build
+ln -s $REPOSITORY_DIR/tests/lx2162a_pci_device  $REPOSITORY_DIR/tests/qemu/hw/misc
 
 pushd ./
 cd ./qemu

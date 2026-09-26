@@ -48,7 +48,7 @@ sudo ./qemu-system-x86_64 \
     -m 16G \
     -cpu host \
     -smp 4 \
-    -drive file=/mnt/d/Users/ankirchner/_Projects/vhd_server_serverdatacenter_en-us_vl_linux/26101.1068.amd64fre.ge_release_azcc_r1.250522-1447_server_serverdatacenter_en-us_vl.vhd,format=vpc \
+    -drive file=/mnt/c/Users/ankirchner/_Projects/ankirchner-vm-0.vhd,format=vpc \
     -machine q35,accel=kvm \
     -device VGA \
-    -device lx2162a_device,id=lx2162a_device,bus=pcie.0,addr=0x10
+    -device lx2162a_pci_device,id=lx2162a_pci_device,bus=pcie.0,addr=0x10

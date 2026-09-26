@@ -1,5 +1,5 @@
 
-#include "lx2162a_device.h"
+#include "lx2162a_pci_device.h"
 
 
 static uint32_t config_read(PCIDevice* PciDevice, uint32_t Address, int Length)
@@ -55,7 +55,7 @@ static void device_init(PCIDevice* PciDevice, Error** Error)
     PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET]                           = PCI_CAP_ID_PM;
     PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_CAP_LIST_NEXT]       = 0x00;
 
-    config_write(PciDevice, OFFSET_ADVANCED_ERROR_REPORTING_REPORTING_CAPABILITY,       0x00000001, 2); 
+    config_write(PciDevice, OFFSET_ADVANCED_ERROR_REPORTING_REPORTING_CAPABILITY,       0x00000001, 2);
     config_write(PciDevice, OFFSET_UNCORRECTABLE_ERROR_MASK_REGISTER,                   0x00000000, 4);
     config_write(PciDevice, OFFSET_CORRECTABLE_ERROR_MASK_REGISTER,                     0x00002000, 4);
     config_write(PciDevice, OFFSET_ADVANCED_ERROR_CAPABILITIES_AND_CONTROL_REGISTER,    0x000000a0, 4);
@@ -90,16 +90,16 @@ static void class_init(ObjectClass* ObjectClass, const void* ClassData)
 
     set_bit(DEVICE_CATEGORY_MISC, device_class->categories);
 
-    device_class->desc                  = DESC_VIRTUAL_PCI_DEVICE;
+    device_class->desc = DESC_VIRTUAL_PCI_DEVICE;
 }
 
 
 static const TypeInfo type_info = {
-    .name           = TYPE_VIRTUAL_PCI_DEVICE,
-    .parent         = TYPE_PCI_DEVICE,
-    .instance_size  = sizeof(VirtualPciDevice),
-    .class_init     = class_init,
-    .interfaces     =
+    .name = TYPE_VIRTUAL_PCI_DEVICE,
+    .parent = TYPE_PCI_DEVICE,
+    .instance_size = sizeof(VirtualPciDevice),
+    .class_init = class_init,
+    .interfaces =
         (InterfaceInfo[]){
             { INTERFACE_PCIE_DEVICE },
             {},
