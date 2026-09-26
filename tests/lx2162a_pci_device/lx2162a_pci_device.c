@@ -55,14 +55,23 @@ static void device_init(PCIDevice* PciDevice, Error** Error)
     PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET]                           = PCI_CAP_ID_PM;
     PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_CAP_LIST_NEXT]       = 0x00;
 
-    PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_PMC + 0]          = 0x00;
-    PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_PMC + 1]          = 0x00;
+    config_write(PciDevice, OFFSET_ADVANCED_ERROR_REPORTING_REPORTING_CAPABILITY,       0x00000001, 2);
+    config_write(PciDevice, OFFSET_UNCORRECTABLE_ERROR_MASK_REGISTER,                   0x00000000, 4);
+    config_write(PciDevice, OFFSET_CORRECTABLE_ERROR_MASK_REGISTER,                     0x00002000, 4);
+    config_write(PciDevice, OFFSET_ADVANCED_ERROR_CAPABILITIES_AND_CONTROL_REGISTER,    0x000000a0, 4);
+    config_write(PciDevice, OFFSET_ROOT_ERROR_COMMAND_REGISTER,                         0x00000000, 4);
 
-    PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_CTRL + 0]         = 0x00;
-    PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_CTRL + 1]         = 0x00;
-
-    PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_PPB_EXTENSIONS]   = 0x00;
-    PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_DATA_REGISTER]    = 0x00;
+    config_write(PciDevice, OFFSET_UNCORRECTABLE_ERROR_STATUS_REGISTER,                 0X00000000, 4);
+    config_write(PciDevice, OFFSET_UNCORRECTABLE_ERROR_SEVERITY_REGISTER,               0X00465030, 4);
+    config_write(PciDevice, OFFSET_CORRECTABLE_ERROR_STATUS_REGISTER,                   0X00000000, 4);
+    config_write(PciDevice, OFFSET_HEADER_LOG_REGISTER_DWORD1,                          0X00000000, 4);
+    config_write(PciDevice, OFFSET_HEADER_LOG_REGISTER_DWORD2,                          0X00000000, 4);
+    config_write(PciDevice, OFFSET_HEADER_LOG_REGISTER_DWORD3,                          0X00000000, 4);
+    config_write(PciDevice, OFFSET_HEADER_LOG_REGISTER_DWORD4,                          0X00000000, 4);
+    config_write(PciDevice, OFFSET_ROOT_ERROR_STATUS_REGISTER,                          0X00000000, 4);
+    config_write(PciDevice, OFFSET_CORRECTABLE_ERROR_SOURCE_ID_REGISTER,                0X00000000, 2);
+    config_write(PciDevice, OFFSET_ERROR_SOURCE_ID_REGISTER,                            0X00000000, 2);
+    config_write(PciDevice, OFFSET_LANE_ERROR_STATUS_REGISTER,                          0X00000000, 4);
 }
 
 
@@ -81,16 +90,16 @@ static void class_init(ObjectClass* ObjectClass, const void* ClassData)
 
     set_bit(DEVICE_CATEGORY_MISC, device_class->categories);
 
-    device_class->desc                  = DESC_VIRTUAL_PCI_DEVICE;
+    device_class->desc = DESC_VIRTUAL_PCI_DEVICE;
 }
 
 
 static const TypeInfo type_info = {
-    .name           = TYPE_VIRTUAL_PCI_DEVICE,
-    .parent         = TYPE_PCI_DEVICE,
-    .instance_size  = sizeof(VirtualPciDevice),
-    .class_init     = class_init,
-    .interfaces     =
+    .name = TYPE_VIRTUAL_PCI_DEVICE,
+    .parent = TYPE_PCI_DEVICE,
+    .instance_size = sizeof(VirtualPciDevice),
+    .class_init = class_init,
+    .interfaces =
         (InterfaceInfo[]){
             { INTERFACE_PCIE_DEVICE },
             {},

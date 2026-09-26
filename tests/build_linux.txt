@@ -51,4 +51,4 @@ sudo ./qemu-system-x86_64 \
     -drive file=/mnt/c/Users/ankirchner/_Projects/ankirchner-vm-0.vhd,format=vpc \
     -machine q35,accel=kvm \
     -device VGA \
-    -device lx2162a_device,id=lx2162a_device,bus=pcie.0,addr=0x10
+    -device lx2162a_pci_device,id=lx2162a_pci_device,bus=pcie.0,addr=0x10
