@@ -6,72 +6,160 @@ static uint32_t config_read(PCIDevice* PciDevice, uint32_t Address, int Length)
 {
     uint32_t value = pci_default_read_config(PciDevice, Address, Length);
 
-    if ((VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET <= Address) && (Address <= VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_SIZEOF))
+    if ((_CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL))
     {
-        printf("config_read     %p %08x %08x %2d %s *\n", (void*)PciDevice, Address, value, Length, PciDevice->name);
-    }
-    else
-    {
-        printf("config_read     %p %08x %08x %2d %s\n", (void*)PciDevice, Address, value, Length, PciDevice->name);
+        printf("config_read  %08x %2d", Address, Length);
+
+        if (Length >= 1)
+        {
+            printf(" %02x", PciDevice->config[Address + 0u]);
+        }
+
+        if (Length >= 2)
+        {
+            printf(" %02x", PciDevice->config[Address + 1u]);
+        }
+
+        if (Length >= 4)
+        {
+            printf(" %02x", PciDevice->config[Address + 2u]);
+            printf(" %02x", PciDevice->config[Address + 3u]);
+        }
+
+        printf("\n");
     }
 
     return value;
 }
 
 
-static void config_write(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
+static void config_write_normal(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
 {
-    if ((VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET <= Address) && (Address <= VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_SIZEOF))
-    {
-        printf("config_write    %p %08x %08x %2d %s *\n", (void*)PciDevice, Address, Value, Length, PciDevice->name);
-    }
-    else
-    {
-        printf("config_write    %p %08x %08x %2d %s\n", (void*)PciDevice, Address, Value, Length, PciDevice->name);
-    }
-
     if (Length >= 1)
     {
-        PciDevice->config[Address + 0u] = (Value & 0x000000ff) >> 0;
+        PciDevice->config[Address + 0u] = (Value & 0x000000ff) >> 0u;
     }
 
     if (Length >= 2)
     {
-        PciDevice->config[Address + 1u] = (Value & 0x0000ff00) >> 8;
+        PciDevice->config[Address + 1u] = (Value & 0x0000ff00) >> 8u;
     }
 
     if (Length >= 4)
     {
-        PciDevice->config[Address + 2u] = (Value & 0x00ff0000) >> 16;
-        PciDevice->config[Address + 3u] = (Value & 0xff000000) >> 24;
+        PciDevice->config[Address + 2u] = (Value & 0x00ff0000) >> 16u;
+        PciDevice->config[Address + 3u] = (Value & 0xff000000) >> 24u;
+    }
+}
+
+
+static void config_write_w1c(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
+{
+    uint32_t value = config_read(PciDevice, Address, Length);
+
+    value &= ~Value;
+
+    config_write_normal(PciDevice, Address, value, Length);
+}
+
+
+static void config_write(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
+{
+    if (((_CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL))
+    ||  ((_CAPABILITY_ID_ADVANCED_ERROR_CONTROL   + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_CONTROL   + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL)))
+    {
+        printf("config_write %08x %2d", Address, Length);
+
+        if (Length >= 1)
+        {
+            printf(" %02x", (Value & 0x000000ff) >> 0u);
+        }
+
+        if (Length >= 2)
+        {
+            printf(" %02x", (Value & 0x0000ff00) >> 8u);
+        }
+
+        if (Length >= 4)
+        {
+            printf(" %02x", (Value & 0x00ff0000) >> 16u);
+            printf(" %02x", (Value & 0xff000000) >> 24u);
+        }
+
+        printf("\n");
+    }
+
+    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_UNCORRECTABLE_ERROR_MASK_REGISTER)
+    {
+        config_write_normal(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_CORRECTABLE_ERROR_MASK_REGISTER)
+    {
+        config_write_normal(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_CAPABILITIES_AND_CONTROL_REGISTER)
+    {
+        config_write_normal(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ROOT_ERROR_COMMAND_REGISTER)
+    {
+        config_write_normal(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_UNCORRECTABLE_ERROR_STATUS_REGISTER)
+    {
+        config_write_w1c(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_CORRECTABLE_ERROR_STATUS_REGISTER)
+    {
+        config_write_w1c(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ROOT_ERROR_STATUS_REGISTER)
+    {
+        config_write_w1c(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_LANE_ERROR_STATUS_REGISTER)
+    {
+        config_write_w1c(PciDevice, Address, Value, Length);
+    }
+    else if ((_CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL))
+    {
+        Address = Address - _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING;
+
+        config_write_normal(PciDevice, Address, Value, Length);
     }
 }
 
 
 static void device_init(PCIDevice* PciDevice, Error** Error)
 {
-    PciDevice->config[PCI_STATUS]                                                       = PCI_STATUS_CAP_LIST;
-    PciDevice->config[PCI_CAPABILITY_LIST]                                              = VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET;
-    PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET]                           = PCI_CAP_ID_PM;
-    PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_CAP_LIST_NEXT]       = 0x00;
+    if (pcie_endpoint_cap_init(PciDevice, 0x80) < 0)
+    {
+        printf("Failed to initialize PCIe endpoint capability\n");
+        return;
+    }
 
-    config_write(PciDevice, OFFSET_ADVANCED_ERROR_REPORTING_REPORTING_CAPABILITY,       0x00000001, 2);
-    config_write(PciDevice, OFFSET_UNCORRECTABLE_ERROR_MASK_REGISTER,                   0x00000000, 4);
-    config_write(PciDevice, OFFSET_CORRECTABLE_ERROR_MASK_REGISTER,                     0x00002000, 4);
-    config_write(PciDevice, OFFSET_ADVANCED_ERROR_CAPABILITIES_AND_CONTROL_REGISTER,    0x000000a0, 4);
-    config_write(PciDevice, OFFSET_ROOT_ERROR_COMMAND_REGISTER,                         0x00000000, 4);
+    pcie_add_capability(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_REPORTING, VIRTUAL_PCI_DEVICE_REVISION, _CAPABILITY_ID_ADVANCED_ERROR_REPORTING, _SIZE_TOTAL);
+    pcie_add_capability(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL,   VIRTUAL_PCI_DEVICE_REVISION, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL,   _SIZE_TOTAL);
 
-    config_write(PciDevice, OFFSET_UNCORRECTABLE_ERROR_STATUS_REGISTER,                 0X00000000, 4);
-    config_write(PciDevice, OFFSET_UNCORRECTABLE_ERROR_SEVERITY_REGISTER,               0X00465030, 4);
-    config_write(PciDevice, OFFSET_CORRECTABLE_ERROR_STATUS_REGISTER,                   0X00000000, 4);
-    config_write(PciDevice, OFFSET_HEADER_LOG_REGISTER_DWORD1,                          0X00000000, 4);
-    config_write(PciDevice, OFFSET_HEADER_LOG_REGISTER_DWORD2,                          0X00000000, 4);
-    config_write(PciDevice, OFFSET_HEADER_LOG_REGISTER_DWORD3,                          0X00000000, 4);
-    config_write(PciDevice, OFFSET_HEADER_LOG_REGISTER_DWORD4,                          0X00000000, 4);
-    config_write(PciDevice, OFFSET_ROOT_ERROR_STATUS_REGISTER,                          0X00000000, 4);
-    config_write(PciDevice, OFFSET_CORRECTABLE_ERROR_SOURCE_ID_REGISTER,                0X00000000, 2);
-    config_write(PciDevice, OFFSET_ERROR_SOURCE_ID_REGISTER,                            0X00000000, 2);
-    config_write(PciDevice, OFFSET_LANE_ERROR_STATUS_REGISTER,                          0X00000000, 4);
+    memset(PciDevice->config + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING, 0, _SIZE_TOTAL);
+
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY,              _INITIAL_ADVANCED_ERROR_REPORTING_CAPABILITY,              _SIZE_ADVANCED_ERROR_REPORTING_CAPABILITY);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_UNCORRECTABLE_ERROR_MASK_REGISTER,                _INITIAL_UNCORRECTABLE_ERROR_MASK_REGISTER,                _SIZE_UNCORRECTABLE_ERROR_MASK_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_CORRECTABLE_ERROR_MASK_REGISTER,                  _INITIAL_CORRECTABLE_ERROR_MASK_REGISTER,                  _SIZE_CORRECTABLE_ERROR_MASK_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_CAPABILITIES_AND_CONTROL_REGISTER, _INITIAL_ADVANCED_ERROR_CAPABILITIES_AND_CONTROL_REGISTER, _SIZE_ADVANCED_ERROR_CAPABILITIES_AND_CONTROL_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ROOT_ERROR_COMMAND_REGISTER,                      _INITIAL_ROOT_ERROR_COMMAND_REGISTER,                      _SIZE_ROOT_ERROR_COMMAND_REGISTER);
+
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_UNCORRECTABLE_ERROR_STATUS_REGISTER,              _INITIAL_UNCORRECTABLE_ERROR_STATUS_REGISTER,              _SIZE_UNCORRECTABLE_ERROR_STATUS_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_UNCORRECTABLE_ERROR_SEVERITY_REGISTER,            _INITIAL_UNCORRECTABLE_ERROR_SEVERITY_REGISTER,            _SIZE_UNCORRECTABLE_ERROR_SEVERITY_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_CORRECTABLE_ERROR_STATUS_REGISTER,                _INITIAL_CORRECTABLE_ERROR_STATUS_REGISTER,                _SIZE_CORRECTABLE_ERROR_STATUS_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD1,                       _INITIAL_HEADER_LOG_REGISTER_DWORD1,                       _SIZE_HEADER_LOG_REGISTER_DWORD1);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD2,                       _INITIAL_HEADER_LOG_REGISTER_DWORD2,                       _SIZE_HEADER_LOG_REGISTER_DWORD2);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD3,                       _INITIAL_HEADER_LOG_REGISTER_DWORD3,                       _SIZE_HEADER_LOG_REGISTER_DWORD3);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD4,                       _INITIAL_HEADER_LOG_REGISTER_DWORD4,                       _SIZE_HEADER_LOG_REGISTER_DWORD4);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ROOT_ERROR_STATUS_REGISTER,                       _INITIAL_ROOT_ERROR_STATUS_REGISTER,                       _SIZE_ROOT_ERROR_STATUS_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_CORRECTABLE_ERROR_SOURCE_ID_REGISTER,             _INITIAL_CORRECTABLE_ERROR_SOURCE_ID_REGISTER,             _SIZE_CORRECTABLE_ERROR_SOURCE_ID_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ERROR_SOURCE_ID_REGISTER,                         _INITIAL_ERROR_SOURCE_ID_REGISTER,                         _SIZE_ERROR_SOURCE_ID_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_LANE_ERROR_STATUS_REGISTER,                       _INITIAL_LANE_ERROR_STATUS_REGISTER,                       _SIZE_LANE_ERROR_STATUS_REGISTER);
 }
 
 
@@ -94,12 +182,13 @@ static void class_init(ObjectClass* ObjectClass, const void* ClassData)
 }
 
 
-static const TypeInfo type_info = {
-    .name = TYPE_VIRTUAL_PCI_DEVICE,
-    .parent = TYPE_PCI_DEVICE,
-    .instance_size = sizeof(VirtualPciDevice),
-    .class_init = class_init,
-    .interfaces =
+static const TypeInfo type_info =
+{
+    .name           = TYPE_VIRTUAL_PCI_DEVICE,
+    .parent         = TYPE_PCI_DEVICE,
+    .instance_size  = sizeof(VirtualPciDevice),
+    .class_init     = class_init,
+    .interfaces     =
         (InterfaceInfo[]){
             { INTERFACE_PCIE_DEVICE },
             {},
