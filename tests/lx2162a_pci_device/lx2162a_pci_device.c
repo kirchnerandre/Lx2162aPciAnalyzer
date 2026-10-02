@@ -52,18 +52,18 @@ static uint32_t config_read(PCIDevice* PciDevice, uint32_t Address, int Length)
 
         if (Length >= 1)
         {
-            printf(" %02x", (value & 0x000000ff) >> 0u);
+            printf(" %02x", PciDevice->config[Address + 0u]);
         }
 
         if (Length >= 2)
         {
-            printf(" %02x", (value & 0x0000ff00) >> 8u);
+            printf(" %02x", PciDevice->config[Address + 1u]);
         }
 
         if (Length >= 4)
         {
-            printf(" %02x", (value & 0x00ff0000) >> 16u);
-            printf(" %02x", (value & 0xff000000) >> 24u);
+            printf(" %02x", PciDevice->config[Address + 2u]);
+            printf(" %02x", PciDevice->config[Address + 3u]);
         }
 
         printf("\n");
@@ -81,8 +81,10 @@ static void device_init(PCIDevice* PciDevice, Error** Error)
         return;
     }
 
-    pcie_add_capability(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_REPORTING, VIRTUAL_PCI_DEVICE_REVISION, _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY, _SIZE_TOTAL);
-    pcie_add_capability(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL,   VIRTUAL_PCI_DEVICE_REVISION, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL   + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY, _SIZE_TOTAL);
+    pcie_add_capability(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_REPORTING, VIRTUAL_PCI_DEVICE_REVISION, _CAPABILITY_ID_ADVANCED_ERROR_REPORTING, _SIZE_TOTAL);
+    pcie_add_capability(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL,   VIRTUAL_PCI_DEVICE_REVISION, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL,   _SIZE_TOTAL);
+
+    memset(PciDevice->config + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING, 0, _SIZE_TOTAL);
 
     config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY,              _INITIAL_ADVANCED_ERROR_REPORTING_CAPABILITY,              _SIZE_ADVANCED_ERROR_REPORTING_CAPABILITY);
     config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_UNCORRECTABLE_ERROR_MASK_REGISTER,                _INITIAL_UNCORRECTABLE_ERROR_MASK_REGISTER,                _SIZE_UNCORRECTABLE_ERROR_MASK_REGISTER);
@@ -123,7 +125,8 @@ static void class_init(ObjectClass* ObjectClass, const void* ClassData)
 }
 
 
-static const TypeInfo type_info = {
+static const TypeInfo type_info =
+{
     .name           = TYPE_VIRTUAL_PCI_DEVICE,
     .parent         = TYPE_PCI_DEVICE,
     .instance_size  = sizeof(VirtualPciDevice),
