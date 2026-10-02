@@ -2,139 +2,6 @@
 #include "lx2162a_pci_device.h"
 
 
-static void config_write_uncorrectable_error_mask_register(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
-{
-    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_UNCORRECTABLE_ERROR_MASK_REGISTER)
-    {
-
-    }
-}
-
-
-static void config_write_correctable_error_mask_register(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
-{
-    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_CORRECTABLE_ERROR_MASK_REGISTER)
-    {
-        
-    }
-}
-
-
-static void config_write_advanced_error_capabilities_and_control_register(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
-{
-    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_CAPABILITIES_AND_CONTROL_REGISTER)
-    {
-
-    }
-}
-
-
-static void config_write_root_error_command_register(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
-{
-    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ROOT_ERROR_COMMAND_REGISTER)
-    {
-
-    }
-}
-
-
-static void config_write_uncorrectable_error_status_register(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
-{
-    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_UNCORRECTABLE_ERROR_STATUS_REGISTER)
-    {
-
-    }
-}
-
-
-static void config_write_correctable_error_status_register(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
-{
-    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_CORRECTABLE_ERROR_STATUS_REGISTER)
-    {
-
-    }
-}
-
-
-static void config_write_root_error_status_register(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
-{
-    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ROOT_ERROR_STATUS_REGISTER)
-    {
-
-    }
-}
-
-
-static void config_write_lane_error_status_register(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
-{
-    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_LANE_ERROR_STATUS_REGISTER)
-    {
-
-    }
-}
-
-
-static void config_write(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
-{
-    if (((_CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL))
-    ||  ((_CAPABILITY_ID_ADVANCED_ERROR_CONTROL   + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_CONTROL   + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL)))
-    {
-        printf("config_write %08x %2d", Address, Length);
-
-        if (Length >= 1)
-        {
-            printf(" %02x", (Value & 0x000000ff) >> 0u);
-        }
-
-        if (Length >= 2)
-        {
-            printf(" %02x", (Value & 0x0000ff00) >> 8u);
-        }
-
-        if (Length >= 4)
-        {
-            printf(" %02x", (Value & 0x00ff0000) >> 16u);
-            printf(" %02x", (Value & 0xff000000) >> 24u);
-        }
-
-        printf("\n");
-    }
-
-    if ((_CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL))
-    {
-        // Configuration
-        config_write_uncorrectable_error_mask_register                  (PciDevice, Address, Value, Length);
-        config_write_correctable_error_mask_register                    (PciDevice, Address, Value, Length);
-        config_write_advanced_error_capabilities_and_control_register   (PciDevice, Address, Value, Length);
-        config_write_root_error_command_register                        (PciDevice, Address, Value, Length);
-
-        // Errors
-        config_write_uncorrectable_error_status_register                (PciDevice, Address, Value, Length);
-        config_write_correctable_error_status_register                  (PciDevice, Address, Value, Length);
-        config_write_root_error_status_register                         (PciDevice, Address, Value, Length);
-        config_write_lane_error_status_register                         (PciDevice, Address, Value, Length);
-    }
-    else if ((_CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL))
-    {
-        if (Length >= 1)
-        {
-            PciDevice->config[Address - _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + 0u] = (Value & 0x000000ff) >> 0u;
-        }
-
-        if (Length >= 2)
-        {
-            PciDevice->config[Address - _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + 1u] = (Value & 0x0000ff00) >> 8u;
-        }
-
-        if (Length >= 4)
-        {
-            PciDevice->config[Address - _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + 2u] = (Value & 0x00ff0000) >> 16u;
-            PciDevice->config[Address - _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + 3u] = (Value & 0xff000000) >> 24u;
-        }
-    }
-}
-
-
 static uint32_t config_read(PCIDevice* PciDevice, uint32_t Address, int Length)
 {
     uint32_t value = pci_default_read_config(PciDevice, Address, Length);
@@ -163,6 +30,101 @@ static uint32_t config_read(PCIDevice* PciDevice, uint32_t Address, int Length)
     }
 
     return value;
+}
+
+
+static void config_write_normal(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
+{
+    if (Length >= 1)
+    {
+        PciDevice->config[Address - _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + 0u] = (Value & 0x000000ff) >> 0u;
+    }
+
+    if (Length >= 2)
+    {
+        PciDevice->config[Address - _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + 1u] = (Value & 0x0000ff00) >> 8u;
+    }
+
+    if (Length >= 4)
+    {
+        PciDevice->config[Address - _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + 2u] = (Value & 0x00ff0000) >> 16u;
+        PciDevice->config[Address - _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + 3u] = (Value & 0xff000000) >> 24u;
+    }
+}
+
+#if 0
+static void config_write_w1c(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
+{
+    uint32_t value = config_read(PciDevice, Address, Length);
+
+    value = (!Value) & value;
+
+    config_write_normal(PciDevice, Address, Value, Length);
+}
+#endif
+
+static void config_write(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
+{
+    if (((_CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL))
+    ||  ((_CAPABILITY_ID_ADVANCED_ERROR_CONTROL   + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_CONTROL   + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL)))
+    {
+        printf("config_write %08x %2d", Address, Length);
+
+        if (Length >= 1)
+        {
+            printf(" %02x", (Value & 0x000000ff) >> 0u);
+        }
+
+        if (Length >= 2)
+        {
+            printf(" %02x", (Value & 0x0000ff00) >> 8u);
+        }
+
+        if (Length >= 4)
+        {
+            printf(" %02x", (Value & 0x00ff0000) >> 16u);
+            printf(" %02x", (Value & 0xff000000) >> 24u);
+        }
+
+        printf("\n");
+    }
+
+    if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_UNCORRECTABLE_ERROR_MASK_REGISTER)
+    {
+        config_write_normal(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_CORRECTABLE_ERROR_MASK_REGISTER)
+    {
+        config_write_normal(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ADVANCED_ERROR_CAPABILITIES_AND_CONTROL_REGISTER)
+    {
+        config_write_normal(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ROOT_ERROR_COMMAND_REGISTER)
+    {
+        config_write_normal(PciDevice, Address, Value, Length);
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_UNCORRECTABLE_ERROR_STATUS_REGISTER)
+    {
+
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_CORRECTABLE_ERROR_STATUS_REGISTER)
+    {
+
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_ROOT_ERROR_STATUS_REGISTER)
+    {
+
+    }
+    else if (Address == _CAPABILITY_ID_ADVANCED_ERROR_REPORTING + _DELTA_LANE_ERROR_STATUS_REGISTER)
+    {
+
+    }
+    else if ((_CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY <= Address) && (Address < _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY + _SIZE_TOTAL))
+    {
+        config_write_normal(PciDevice, Address, Value, Length);
+    }
 }
 
 
