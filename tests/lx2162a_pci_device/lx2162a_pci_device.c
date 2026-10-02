@@ -6,7 +6,7 @@ static uint32_t config_read(PCIDevice* PciDevice, uint32_t Address, int Length)
 {
     uint32_t value = pci_default_read_config(PciDevice, Address, Length);
 
-    if ((VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET <= Address) && (Address <= VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_SIZEOF))
+    if (Address >= 0x100)
     {
         printf("config_read     %p %08x %08x %2d %s *\n", (void*)PciDevice, Address, value, Length, PciDevice->name);
     }
@@ -21,7 +21,7 @@ static uint32_t config_read(PCIDevice* PciDevice, uint32_t Address, int Length)
 
 static void config_write(PCIDevice* PciDevice, uint32_t Address, uint32_t Value, int Length)
 {
-    if ((VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET <= Address) && (Address <= VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_PM_SIZEOF))
+    if (Address >= 0x100)
     {
         printf("config_write    %p %08x %08x %2d %s *\n", (void*)PciDevice, Address, Value, Length, PciDevice->name);
     }
@@ -50,6 +50,7 @@ static void config_write(PCIDevice* PciDevice, uint32_t Address, uint32_t Value,
 
 static void device_init(PCIDevice* PciDevice, Error** Error)
 {
+#if 0
     PciDevice->config[PCI_STATUS]                                                       = PCI_STATUS_CAP_LIST;
     PciDevice->config[PCI_CAPABILITY_LIST]                                              = VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET;
     PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET]                           = PCI_CAP_ID_PM;
@@ -72,6 +73,33 @@ static void device_init(PCIDevice* PciDevice, Error** Error)
     config_write(PciDevice, OFFSET_CORRECTABLE_ERROR_SOURCE_ID_REGISTER,                0X00000000, 2);
     config_write(PciDevice, OFFSET_ERROR_SOURCE_ID_REGISTER,                            0X00000000, 2);
     config_write(PciDevice, OFFSET_LANE_ERROR_STATUS_REGISTER,                          0X00000000, 4);
+#else
+/*
+    if (pcie_endpoint_cap_init(PciDevice, 0x80) < 0)
+    {
+        printf("*** C ***\n");
+        return;
+    }
+
+    pcie_add_capability(PciDevice, 0x0100, 0x01, 0x0100, 58);
+*/
+
+//  PciDevice->config[PCI_STATUS]                                                   = PCI_STATUS_CAP_LIST;
+//  PciDevice->config[PCI_CAPABILITY_LIST]                                          = VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET;
+//  PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_CAP_LIST_ID]     = PCI_CAP_ID_EXP;
+//  PciDevice->config[VIRTUAL_PCI_DEVICE_CAPABILITIES_OFFSET + PCI_CAP_LIST_NEXT]   = 0x00;
+
+    if (pcie_endpoint_cap_init(PciDevice, 0x80) < 0)
+    {
+        printf("Failed to initialize PCIe endpoint capability\n");
+        return;
+    }
+
+    pcie_add_capability(PciDevice, 0x0100, 0x01, 0x0100, 58);
+
+    PciDevice->config[0x100 + 4] = 0xaa;
+
+#endif
 }
 
 
@@ -95,11 +123,11 @@ static void class_init(ObjectClass* ObjectClass, const void* ClassData)
 
 
 static const TypeInfo type_info = {
-    .name = TYPE_VIRTUAL_PCI_DEVICE,
-    .parent = TYPE_PCI_DEVICE,
-    .instance_size = sizeof(VirtualPciDevice),
-    .class_init = class_init,
-    .interfaces =
+    .name           = TYPE_VIRTUAL_PCI_DEVICE,
+    .parent         = TYPE_PCI_DEVICE,
+    .instance_size  = sizeof(VirtualPciDevice),
+    .class_init     = class_init,
+    .interfaces     =
         (InterfaceInfo[]){
             { INTERFACE_PCIE_DEVICE },
             {},
