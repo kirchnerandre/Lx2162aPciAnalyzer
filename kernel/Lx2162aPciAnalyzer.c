@@ -273,6 +273,7 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
     u32 root_error_status_register_value                = 0u;
     u32 root_error_status_register_address              = 0x0130;
     u32 root_error_status_register_size                 = 32u;
+    u32 root_error_status_register_mask                 = 0x0000007f;
 
     // RO
     u32 correctable_error_source_id_register_value      = 0u;
@@ -317,17 +318,28 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
     }
 
     if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
+        &root_error_status_register_value,
+        root_error_status_register_address,
+        root_error_status_register_size,
+        root_error_status_register_mask) < 0)
+    {
+        pr_err("%s:%d:%s: Failed to read root error status register\n", __FILE__, __LINE__, __func__);
+        goto terminate;
+    }
+
+    if (lx2162a_pci_analyzer_periodic_reg_read_and_clean(
         &lane_error_status_register_value,
         lane_error_status_register_address,
         lane_error_status_register_size,
         lane_error_status_register_mask) < 0)
     {
-        pr_err("%s:%d:%s: Failed to read lane_error status register\n", __FILE__, __LINE__, __func__);
+        pr_err("%s:%d:%s: Failed to read lane error status register\n", __FILE__, __LINE__, __func__);
         goto terminate;
     }
 
     if (((uncorrectable_error_status_register_value  & uncorrectable_error_status_register_mask)    == 0u)
      && ((correctable_error_status_register_value    & correctable_error_status_register_mask)      == 0u)
+     && ((root_error_status_register_value           & root_error_status_register_mask)             == 0u)
      && ((lane_error_status_register_value           & lane_error_status_register_mask)             == 0u))
     {
         pr_info(_DRIVER_NAME " %lld.%09ld No errors\n", (long long)time_stamp.tv_sec, time_stamp.tv_nsec);
