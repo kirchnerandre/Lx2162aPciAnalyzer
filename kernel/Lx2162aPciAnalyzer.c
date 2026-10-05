@@ -14,7 +14,7 @@
 
 #define _DRIVER_NAME            "Lx2162aPciAnalyzer"
 #define _LX2162A_PCI_VENDOR_ID  0x1414
-#define _LX2162A_PCI_DEVICE_ID  0x00b9
+#define _LX2162A_PCI_DEVICE_ID  0x00b8
 #define _RESOLUTION             1000
 #define _SIZE                   300
 
