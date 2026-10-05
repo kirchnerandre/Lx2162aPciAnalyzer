@@ -12,5 +12,4 @@ all:
 	$(MAKE) -C "$(KDIR)" M="$(MODULE_DIR)" MO="$(BUILD_DIR)" modules
 
 clean:
-	$(MAKE) -C "$(KDIR)" M="$(MODULE_DIR)" MO="$(BUILD_DIR)" clean
 	rm -rf "$(BUILD_DIR)"

@@ -40,7 +40,7 @@ struct Lx2162aPciAnalyzerValues
     u32                 HeaderLogRegisterDword2;
     u32                 HeaderLogRegisterDword3;
     u32                 HeaderLogRegisterDword4;
-    u32                 RootErrorStatusRegister;
+    u32                 RootErrorStatusRegister;            // Critical
     u32                 CorrectableErrorSourceIdRegister;
     u32                 ErrorSourceIdRegister;
     u32                 LaneErrorStatusRegister;            // Critical
@@ -514,8 +514,7 @@ static struct miscdevice lx2162a_pci_analyzer_miscdev =
 
 static int __init lx2162a_pci_analyzer_init(void)
 {
-    unsigned long   flags   = 0u;
-    int             retval  = 0;
+    int retval = 0;
 
     lx2162a_pci_analyzer_driver.Offset = 0u;
 
@@ -529,15 +528,7 @@ static int __init lx2162a_pci_analyzer_init(void)
         return -ENODEV;
     }
 
-    flags                               = pci_resource_flags(lx2162a_pci_analyzer_driver.PDev, 0);
-    lx2162a_pci_analyzer_driver.Size    = pci_resource_len  (lx2162a_pci_analyzer_driver.PDev, 0);
-
-    if (!(flags & (IORESOURCE_MEM | IORESOURCE_IO)))
-    {
-        pr_err("%s:%d:%s: Not IO or memory resource\n", __FILE__, __LINE__, __func__);
-        retval = -EINVAL;
-        goto terminate;
-    }
+    lx2162a_pci_analyzer_driver.Size = pci_resource_len(lx2162a_pci_analyzer_driver.PDev, 0);
 
     if (!lx2162a_pci_analyzer_driver.Size)
     {
