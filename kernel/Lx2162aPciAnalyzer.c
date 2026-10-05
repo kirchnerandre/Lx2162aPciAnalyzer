@@ -514,7 +514,8 @@ static struct miscdevice lx2162a_pci_analyzer_miscdev =
 
 static int __init lx2162a_pci_analyzer_init(void)
 {
-    int retval = 0;
+    unsigned long   flags   = 0u;
+    int             retval  = 0;
 
     lx2162a_pci_analyzer_driver.Offset = 0u;
 
@@ -528,7 +529,8 @@ static int __init lx2162a_pci_analyzer_init(void)
         return -ENODEV;
     }
 
-    lx2162a_pci_analyzer_driver.Size = pci_resource_len(lx2162a_pci_analyzer_driver.PDev, 0);
+    flags                               = pci_resource_flags(lx2162a_pci_analyzer_driver.PDev, 0);
+    lx2162a_pci_analyzer_driver.Size    = pci_resource_len  (lx2162a_pci_analyzer_driver.PDev, 0);
 
     if (!lx2162a_pci_analyzer_driver.Size)
     {
