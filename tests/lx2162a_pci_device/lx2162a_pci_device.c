@@ -132,31 +132,6 @@ static void config_write(PCIDevice* PciDevice, uint32_t Address, uint32_t Value,
 }
 
 
-static uint64_t bar0_read(void* opaque, hwaddr addr, unsigned size)
-{
-    printf("BAR0 read: addr=0x%" HWADDR_PRIx ", size=%u\n", addr, size);
-    return 0;
-}
-
-static void bar0_write(void* opaque, hwaddr addr, uint64_t value, unsigned size)
-{
-    printf("BAR0 write: addr=0x%" HWADDR_PRIx ", value=0x%" PRIx64 ", size=%u\n", addr, value, size);
-}
-
-
-static const MemoryRegionOps bar0_ops =
-{
-    .read       = bar0_read,
-    .write      = bar0_write,
-    .endianness = DEVICE_LITTLE_ENDIAN,
-    .valid      =
-    {
-        .min_access_size = 1,
-        .max_access_size = 4,
-    },
-};
-
-
 static void device_init(PCIDevice* PciDevice, Error** Error)
 {
     MemoryRegion* bar_0 = g_new(MemoryRegion, 1);
@@ -171,10 +146,6 @@ static void device_init(PCIDevice* PciDevice, Error** Error)
     pcie_add_capability(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL,   VIRTUAL_PCI_DEVICE_REVISION, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL,   _SIZE_TOTAL);
 
     memset(PciDevice->config + _CAPABILITY_ID_ADVANCED_ERROR_REPORTING, 0, _SIZE_TOTAL);
-
-    memory_region_init_io(bar_0, OBJECT(PciDevice), &bar0_ops,  PciDevice, "bar0", 64 * KiB);
-
-    pci_register_bar(PciDevice, 0, PCI_BASE_ADDRESS_SPACE_MEMORY, bar_0);
 
     config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ADVANCED_ERROR_REPORTING_CAPABILITY,              _INITIAL_ADVANCED_ERROR_REPORTING_CAPABILITY,              _SIZE_ADVANCED_ERROR_REPORTING_CAPABILITY);
     config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_UNCORRECTABLE_ERROR_MASK_REGISTER,                _INITIAL_UNCORRECTABLE_ERROR_MASK_REGISTER,                _SIZE_UNCORRECTABLE_ERROR_MASK_REGISTER);
