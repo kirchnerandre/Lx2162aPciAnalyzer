@@ -25,7 +25,6 @@ struct Lx2162aPciAnalyzerDriver
     struct pci_dev*     PDev;
     struct mutex        Mutex;
     void __iomem*       Base;
-    resource_size_t     Size;
     u32                 Offset;
 };
 
@@ -529,15 +528,7 @@ static int __init lx2162a_pci_analyzer_init(void)
         return -ENODEV;
     }
 
-    flags                               = pci_resource_flags(lx2162a_pci_analyzer_driver.PDev, 0);
-    lx2162a_pci_analyzer_driver.Size    = pci_resource_len  (lx2162a_pci_analyzer_driver.PDev, 0);
-
-    if (!lx2162a_pci_analyzer_driver.Size)
-    {
-        pr_err("%s:%d:%s: BAR register has length zero\n", __FILE__, __LINE__, __func__);
-        retval = -EINVAL;
-        goto terminate;
-    }
+    flags = pci_resource_flags(lx2162a_pci_analyzer_driver.PDev, 0);
 
     lx2162a_pci_analyzer_driver.Base = pci_iomap(lx2162a_pci_analyzer_driver.PDev, 0, 0);
 
@@ -569,11 +560,11 @@ static int __init lx2162a_pci_analyzer_init(void)
     schedule_delayed_work(&lx2162a_pci_analyzer_driver.DelayedWork, msecs_to_jiffies(_RESOLUTION));
 
     pr_info(
-        _DRIVER_NAME ": (%04x:%04x) start=0x%llx Size=0x%llx flags=0x%lx\n",
+        _DRIVER_NAME ": (%04x:%04x) start=0x%llx flags=0x%lx\n",
         lx2162a_pci_analyzer_driver.PDev->vendor,
         lx2162a_pci_analyzer_driver.PDev->device,
         (unsigned long long)pci_resource_start(lx2162a_pci_analyzer_driver.PDev, 0),
-        (unsigned long long)lx2162a_pci_analyzer_driver.Size, flags);
+        flags);
 
 terminate:
     if (retval)

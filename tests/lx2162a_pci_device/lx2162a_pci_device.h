@@ -7,12 +7,14 @@
 #include "hw/pci/pci_device.h"
 
 
-#define VIRTUAL_PCI_DEVICE_VENDOR_ID                               0x1414
-#define VIRTUAL_PCI_DEVICE_DEVICE_ID                               0x00b8
-#define VIRTUAL_PCI_DEVICE_REVISION                                0x01
+#define VIRTUAL_PCI_DEVICE_VENDOR_ID                                0x1414
+#define VIRTUAL_PCI_DEVICE_DEVICE_ID                                0x00b8
+#define VIRTUAL_PCI_DEVICE_REVISION                                 0x01
 
-#define TYPE_VIRTUAL_PCI_DEVICE                                    "lx2162a_pci_device"
-#define DESC_VIRTUAL_PCI_DEVICE                                    "lx2162a_pci_device"
+#define TYPE_VIRTUAL_PCI_DEVICE                                     "lx2162a_pci_device"
+#define DESC_VIRTUAL_PCI_DEVICE                                     "lx2162a_pci_device"
+
+#define _BAR_REGISTERS_SIZE                                         0x2fff
 
 // Capabilities
 #define _CAPABILITY_ID_ADVANCED_ERROR_REPORTING                     0x0100
