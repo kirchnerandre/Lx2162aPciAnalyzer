@@ -52,7 +52,8 @@ def read_Lx2162aPciAnalyzer_data(FilePath):
 #                    f"{lane_error_status_register:08X}.")
 
         return True
-    except:
+    Exception as e:
+        print(e)
         return False
 
 
