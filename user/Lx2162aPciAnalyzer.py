@@ -18,7 +18,8 @@ def read_Lx2162aPciAnalyzer_data(FilePath):
             for i in range(errors):
                 values = data.readline().split(".")
 
-                timestamp_up                            = int(value[0])
+#                timestamp_up                            = int(value[0])
+
 #                timestamp_down                          = int(line.split(".")[1])
 #                uncorrectable_error_status_register     = int(line.split(".")[2])
 #                uncorrectable_error_severity_register   = int(line.split(".")[3])
@@ -32,8 +33,8 @@ def read_Lx2162aPciAnalyzer_data(FilePath):
 #                error_source_id_register                = int(line.split(".")[11])
 #                lane_error_status_register              = int(line.split(".")[12])
 
-                print(
-                    f"{timestamp_up}.")
+#                print(
+#                    f"{timestamp_up}.")
 
 #                    f"{timestamp_down}."
 #                    f"{uncorrectable_error_status_register:08X}."
