@@ -579,7 +579,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
         }
 
         retval += strlen(buffer);
-
+#endif
         scnprintf(&buffer[retval], sizeof(buffer), "%08x\n", lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
@@ -590,7 +590,6 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
         }
 
         retval += sizeof(lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
-#endif
     }
 
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
