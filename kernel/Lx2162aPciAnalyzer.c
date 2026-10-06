@@ -472,7 +472,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 pr_info("01 %zd\n", retval);
     for (u32 i = 0u; i < errors; i++)
     {
-        scnprintf(buffer, sizeof(buffer), "%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x\n",   lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister);
+        scnprintf(buffer, sizeof(buffer), "%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x\n",   lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister,
                                                                                                         lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister,
                                                                                                         lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister,
                                                                                                         lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1,
