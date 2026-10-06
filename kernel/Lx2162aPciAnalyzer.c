@@ -453,6 +453,11 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
 
+    if (!errors)
+    {
+        goto terminate;
+    }
+
     scnprintf(buffer, sizeof(buffer), "%s\n%u\n", _VERSION, lx2162a_pci_analyzer_driver.Errors);
 
     if (copy_to_user(Buffer, buffer, strlen(buffer)))
