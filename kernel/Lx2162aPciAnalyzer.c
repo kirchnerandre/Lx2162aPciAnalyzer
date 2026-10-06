@@ -468,7 +468,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
     }
 
     retval += strlen(_VERSION);
-goto terminate;
+goto terminate_2;
     offset += strlen(_VERSION);
 
     size = _SIZE < lx2162a_pci_analyzer_driver.Offset ? _SIZE : lx2162a_pci_analyzer_driver.Offset;
@@ -492,7 +492,7 @@ goto terminate;
     }
 
     retval += sizeof(lx2162a_pci_analyzer_values);
-
+terminate_2:
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
 
     lx2162a_pci_analyzer_driver.Offset = 0u;
