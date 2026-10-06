@@ -469,7 +469,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
     }
 
     retval += strlen(buffer);
-pr_info("01 %zd\n", retval);
+
     for (u32 i = 0u; i < errors; i++)
     {
         scnprintf(buffer, sizeof(buffer), "%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x\n",   lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister,
@@ -492,7 +492,6 @@ pr_info("01 %zd\n", retval);
         }
 
         retval += strlen(buffer);
-pr_info("03 %zd\n", retval);
     }
 
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
@@ -501,7 +500,7 @@ pr_info("03 %zd\n", retval);
 
 terminate:
     mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
-pr_info("04 %zd\n", retval);
+
     return retval;
 }
 
