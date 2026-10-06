@@ -472,7 +472,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
     {
         scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister);
 
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
+        if (copy_to_user(&Buffer[retval], buffer, strlen(buffer)))
         {
             pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
             retval = -EFAULT;
@@ -481,18 +481,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister);
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
@@ -503,7 +492,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1);
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
@@ -514,7 +503,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword2);
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
@@ -525,7 +514,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword3);
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword2);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
@@ -536,7 +525,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword4);
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword3);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
@@ -547,7 +536,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].RootErrorStatusRegister);
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword4);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
@@ -558,7 +547,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].CorrectableErrorSourceIdRegister);
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].RootErrorStatusRegister);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
@@ -569,7 +558,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].ErrorSourceIdRegister);
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].CorrectableErrorSourceIdRegister);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
@@ -580,7 +569,18 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 
-        scnprintf(buffer, sizeof(buffer), "%08x\n", lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].ErrorSourceIdRegister);
+
+        if (copy_to_user(Buffer, buffer, strlen(buffer)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += strlen(buffer);
+
+        scnprintf(&Buffer[retval], sizeof(buffer), "%08x\n", lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
