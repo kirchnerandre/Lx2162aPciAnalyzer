@@ -15,14 +15,14 @@ def verify_Lx2162aPciAnalyzer_exists(FilePath):
 
 
 def read_Lx2162aPciAnalyzer_data(FilePath):
-    with open(FilePath, "rb") as file:
-        binary_data = file.read()
+    try:
+        data = open(FilePath, "r").read()
 
-    print(f"Successfully read {len(binary_data)} bytes.")
+        print(data)
 
-    print("First 20 bytes:", binary_data[:20])
-
-    return True
+        return True
+    except:
+        return False
 
 
 def main():
