@@ -17,7 +17,7 @@
 #define _LX2162A_PCI_VENDOR_ID  0x1414
 #define _LX2162A_PCI_DEVICE_ID  0x00b8
 #define _RESOLUTION             1000
-#define _SIZE                   300
+#define _ERRORS_MAX             300
 
 
 struct Lx2162aPciAnalyzerDriver
@@ -25,7 +25,7 @@ struct Lx2162aPciAnalyzerDriver
     struct delayed_work DelayedWork;
     struct pci_dev*     PDev;
     struct mutex        Mutex;
-    u32                 Offset;
+    u32                 Errors;
     s32                 Capability;
 };
 
@@ -50,7 +50,7 @@ struct Lx2162aPciAnalyzerValues
 static struct Lx2162aPciAnalyzerDriver lx2162a_pci_analyzer_driver;
 
 
-static struct Lx2162aPciAnalyzerValues lx2162a_pci_analyzer_values[_SIZE];
+static struct Lx2162aPciAnalyzerValues lx2162a_pci_analyzer_values[_ERRORS_MAX];
 
 
 static int lx2162a_pci_analyzer_periodic_reg_read(u32* Value, loff_t Offset, size_t Size)
@@ -422,20 +422,20 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
         goto terminate;
     }
 
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].Timestamp                           = time_stamp;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].UncorrectableErrorStatusRegister    = uncorrectable_error_status_register_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].UncorrectableErrorSeverityRegister  = uncorrectable_error_severity_register_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].CorrectableErrorStatusRegister      = correctable_error_status_register_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].HeaderLogRegisterDword1             = header_log_register_dword1_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].HeaderLogRegisterDword2             = header_log_register_dword2_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].HeaderLogRegisterDword3             = header_log_register_dword3_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].HeaderLogRegisterDword4             = header_log_register_dword4_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].RootErrorStatusRegister             = root_error_status_register_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].CorrectableErrorSourceIdRegister    = correctable_error_source_id_register_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].ErrorSourceIdRegister               = error_source_id_register_value;
-    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Offset % _SIZE].LaneErrorStatusRegister             = lane_error_status_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].Timestamp                             = time_stamp;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].UncorrectableErrorStatusRegister      = uncorrectable_error_status_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].UncorrectableErrorSeverityRegister    = uncorrectable_error_severity_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].CorrectableErrorStatusRegister        = correctable_error_status_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].HeaderLogRegisterDword1               = header_log_register_dword1_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].HeaderLogRegisterDword2               = header_log_register_dword2_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].HeaderLogRegisterDword3               = header_log_register_dword3_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].HeaderLogRegisterDword4               = header_log_register_dword4_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].RootErrorStatusRegister               = root_error_status_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].CorrectableErrorSourceIdRegister      = correctable_error_source_id_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].ErrorSourceIdRegister                 = error_source_id_register_value;
+    lx2162a_pci_analyzer_values[lx2162a_pci_analyzer_driver.Errors % _ERRORS_MAX].LaneErrorStatusRegister               = lane_error_status_register_value;
 
-    lx2162a_pci_analyzer_driver.Offset++;
+    lx2162a_pci_analyzer_driver.Errors++;
 
 terminate:
     mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
@@ -448,19 +448,14 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 {
     ssize_t retval  = 0;
     u32     size    = 0u;
-    u32     offset  = 0u;
-    char    buffer  [32u];
+    u32     errors  = lx2162a_pci_analyzer_driver.Errors
+    char    buffer  [16u];
 
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
 
-    if (!lx2162a_pci_analyzer_driver.Offset)
-    {
-        goto terminate;
-    }
+    scnprintf(buffer, sizeof(buffer), "%s\n%u\n", _VERSION, lx2162a_pci_analyzer_driver.Errors);
 
-    scnprintf(buffer, sizeof(buffer), "%s\n%u\n", _VERSION, lx2162a_pci_analyzer_driver.Offset);
-
-    if (copy_to_user(&Buffer[offset], buffer, strlen(buffer)))
+    if (copy_to_user(Buffer, buffer, strlen(buffer)))
     {
         pr_err("%s:%d:%s: Failed to copy version\n", __FILE__, __LINE__, __func__);
         retval = -EFAULT;
@@ -468,39 +463,134 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
     }
 
     retval += strlen(buffer);
-    offset += strlen(buffer);
 
-#if 0
-pr_info(_DRIVER_NAME ": *** %d ***\n", retval);
-goto terminate_2;
-
-
-    size = _SIZE < lx2162a_pci_analyzer_driver.Offset ? _SIZE : lx2162a_pci_analyzer_driver.Offset;
-
-    if (copy_to_user(&Buffer[offset], &size, sizeof(size)))
+    for (u32 i = 0u; i < lx2162a_pci_analyzer_driver.Errors; i++)
     {
-        pr_err("%s:%d:%s: Failed to copy size\n", __FILE__, __LINE__, __func__);
-        retval = -EFAULT;
-        goto terminate;
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister);
+
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister);
+
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister);
+
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1);
+
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword2);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword2)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword2);
+
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword3);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword3)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword3);
+
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword4);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword4)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword4);
+
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].RootErrorStatusRegister);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].RootErrorStatusRegister)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].RootErrorStatusRegister);
+
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].CorrectableErrorSourceIdRegister);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].CorrectableErrorSourceIdRegister)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].CorrectableErrorSourceIdRegister);
+
+        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].ErrorSourceIdRegister);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].ErrorSourceIdRegister)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].ErrorSourceIdRegister);
+
+        scnprintf(buffer, sizeof(buffer), "%08x\n", lx2162a_pci_analyzer_values[i].LaneErrorStatusRegisterv);
+
+        if (copy_to_user(&Buffer[offset], &size, sizeof(lx2162a_pci_analyzer_values[i].LaneErrorStatusRegisterv)))
+        {
+            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
+            retval = -EFAULT;
+            goto terminate;
+        }
+
+        retval += sizeof(lx2162a_pci_analyzer_values[i].LaneErrorStatusRegisterv);
     }
-
-    retval += sizeof(size);
-
-    offset += sizeof(size);
-
-    if (copy_to_user(&Buffer[offset], lx2162a_pci_analyzer_values, sizeof(lx2162a_pci_analyzer_values)))
-    {
-        pr_err("%s:%d:%s: Failed to copy data\n", __FILE__, __LINE__, __func__);
-        retval = -EFAULT;
-        goto terminate;
-    }
-
-    retval += sizeof(lx2162a_pci_analyzer_values);
-#endif
 
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
 
-    lx2162a_pci_analyzer_driver.Offset = 0u;
+    lx2162a_pci_analyzer_driver.Errors = 0u;
 
 terminate:
     mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
