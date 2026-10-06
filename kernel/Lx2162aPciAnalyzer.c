@@ -467,7 +467,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
     }
 
     retval += strlen(buffer);
-
+pr_info("01 %u\n", retval);
     for (u32 i = 0u; i < errors; i++)
     {
         scnprintf(&buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister);
@@ -480,6 +480,8 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
         }
 
         retval += strlen(buffer);
+        pr_info("02 %u\n", retval);
+
 #if 0
         scnprintf(&buffer[retval], sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister);
 
@@ -580,6 +582,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
         retval += strlen(buffer);
 #endif
+
         scnprintf(&buffer[retval], sizeof(buffer), "%08x\n", lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
@@ -590,6 +593,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
         }
 
         retval += strlen(buffer);
+pr_info("03 %u\n", retval);
     }
 
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
@@ -598,7 +602,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
 terminate:
     mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
-
+pr_info("04 %u\n", retval);
     return retval;
 }
 
