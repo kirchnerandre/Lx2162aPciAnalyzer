@@ -134,8 +134,6 @@ static void config_write(PCIDevice* PciDevice, uint32_t Address, uint32_t Value,
 
 static void device_init(PCIDevice* PciDevice, Error** Error)
 {
-    MemoryRegion* bar_0 = g_new(MemoryRegion, 1);
-
     if (pcie_endpoint_cap_init(PciDevice, 0x80) < 0)
     {
         printf("Failed to initialize PCIe endpoint capability\n");
