@@ -463,17 +463,19 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 
     for (u32 i = 0u; i < errors; i++)
     {
-        scnprintf(buffer, sizeof(buffer), "%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x\n",   lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister,
-                                                                                                        lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister,
-                                                                                                        lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister,
-                                                                                                        lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1,
-                                                                                                        lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword2,
-                                                                                                        lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword3,
-                                                                                                        lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword4,
-                                                                                                        lx2162a_pci_analyzer_values[i].RootErrorStatusRegister,
-                                                                                                        lx2162a_pci_analyzer_values[i].CorrectableErrorSourceIdRegister,
-                                                                                                        lx2162a_pci_analyzer_values[i].ErrorSourceIdRegister,
-                                                                                                        lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
+        scnprintf(buffer, sizeof(buffer), "%lld.%09ld %08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x\n",    (long long)lx2162a_pci_analyzer_values[i].tv_sec,
+                                                                                                                    lx2162a_pci_analyzer_values[i].tv_nsec
+                                                                                                                    lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister,
+                                                                                                                    lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister,
+                                                                                                                    lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister,
+                                                                                                                    lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1,
+                                                                                                                    lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword2,
+                                                                                                                    lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword3,
+                                                                                                                    lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword4,
+                                                                                                                    lx2162a_pci_analyzer_values[i].RootErrorStatusRegister,
+                                                                                                                    lx2162a_pci_analyzer_values[i].CorrectableErrorSourceIdRegister,
+                                                                                                                    lx2162a_pci_analyzer_values[i].ErrorSourceIdRegister,
+                                                                                                                    lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
 
         if (copy_to_user(&Buffer[retval], buffer, strlen(buffer)))
         {
