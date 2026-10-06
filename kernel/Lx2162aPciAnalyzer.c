@@ -25,7 +25,7 @@ struct Lx2162aPciAnalyzerDriver
     struct pci_dev*     PDev;
     struct mutex        Mutex;
     u32                 Offset;
-    i32                 Capability;
+    s32                 Capability;
 };
 
 
@@ -575,11 +575,6 @@ static void __exit lx2162a_pci_analyzer_exit(void)
     cancel_delayed_work_sync(&lx2162a_pci_analyzer_driver.DelayedWork);
 
     misc_deregister(&lx2162a_pci_analyzer_miscdev);
-
-    if (lx2162a_pci_analyzer_driver.Base)
-    {
-        pci_iounmap(lx2162a_pci_analyzer_driver.PDev, lx2162a_pci_analyzer_driver.Base);
-    }
 
     pci_dev_put(lx2162a_pci_analyzer_driver.PDev);
 
