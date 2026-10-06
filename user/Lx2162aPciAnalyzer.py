@@ -11,7 +11,7 @@ def read_Lx2162aPciAnalyzer_data(FilePath):
     try:
         data = open(FilePath, "r").read()
 
-        if data ~= "":
+        if data != "":
             version = int(data.readline())
             errors  = int(data.readline())
 
@@ -35,17 +35,17 @@ def read_Lx2162aPciAnalyzer_data(FilePath):
                 print(
                     f"{timestamp_up}."
                     f"{timestamp_down}."
-                    f"{uncorrectable_error_status_register:08X".}
-                    f"{uncorrectable_error_severity_register:08X".}
-                    f"{correctable_error_status_register:08X".}
-                    f"{header_log_register_dword_1:08X".}
-                    f"{header_log_register_dword_2:08X".}
-                    f"{header_log_register_dword_3:08X".}
-                    f"{header_log_register_dword_4:08X".}
-                    f"{root_error_status_register:08X".}
-                    f"{correctable_error_source_id_register:08X".}
-                    f"{error_source_id_register:08X".}
-                    f"{lane_error_status_register:08X".})
+                    f"{uncorrectable_error_status_register:08X}."
+                    f"{uncorrectable_error_severity_register:08X}."
+                    f"{correctable_error_status_register:08X}."
+                    f"{header_log_register_dword_1:08X}."
+                    f"{header_log_register_dword_2:08X}."
+                    f"{header_log_register_dword_3:08X}."
+                    f"{header_log_register_dword_4:08X}."
+                    f"{root_error_status_register:08X}."
+                    f"{correctable_error_source_id_register:08X}."
+                    f"{error_source_id_register:08X}."
+                    f"{lane_error_status_register:08X}.")
 
         return True
     except:
