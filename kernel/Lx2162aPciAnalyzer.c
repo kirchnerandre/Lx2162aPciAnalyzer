@@ -33,17 +33,17 @@ struct Lx2162aPciAnalyzerDriver
 struct Lx2162aPciAnalyzerValues
 {
     struct timespec64   Timestamp;
-    u32                 UncorrectableErrorStatusRegister;   // Critical
+    u32                 UncorrectableErrorStatusRegister;   // Critical - 0x104
     u32                 UncorrectableErrorSeverityRegister;
-    u32                 CorrectableErrorStatusRegister;     // Critical
+    u32                 CorrectableErrorStatusRegister;     // Critical - 0x110
     u32                 HeaderLogRegisterDword1;
     u32                 HeaderLogRegisterDword2;
     u32                 HeaderLogRegisterDword3;
     u32                 HeaderLogRegisterDword4;
-    u32                 RootErrorStatusRegister;            // Critical
+    u32                 RootErrorStatusRegister;            // Critical - 0x130
     u32                 CorrectableErrorSourceIdRegister;
     u32                 ErrorSourceIdRegister;
-    u32                 LaneErrorStatusRegister;            // Critical
+    u32                 LaneErrorStatusRegister;            // Critical - 0x160
 };
 
 
@@ -392,15 +392,6 @@ static void lx2162a_pci_analyzer_periodic_work(struct work_struct* DelayedWork)
         header_log_register_dword4_size) < 0)
     {
         pr_err("%s:%d:%s: Failed to read header log register dword4\n", __FILE__, __LINE__, __func__);
-        goto terminate;
-    }
-
-    if (lx2162a_pci_analyzer_periodic_reg_read(
-        &root_error_status_register_value,
-        root_error_status_register_address,
-        root_error_status_register_size) < 0)
-    {
-        pr_err("%s:%d:%s: Failed to read root error status register\n", __FILE__, __LINE__, __func__);
         goto terminate;
     }
 
