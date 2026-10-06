@@ -448,7 +448,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 {
     ssize_t retval  = 0;
     u32     errors  = 0u;
-    char    buffer  [16u];
+    char    buffer  [128u];
 
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
 
@@ -472,119 +472,19 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 pr_info("01 %zd\n", retval);
     for (u32 i = 0u; i < errors; i++)
     {
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister);
+        scnprintf(buffer, sizeof(buffer), "%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x.%08x\n",   lx2162a_pci_analyzer_values[i].UncorrectableErrorStatusRegister);
+                                                                                                        lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister,
+                                                                                                        lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister,
+                                                                                                        lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1,
+                                                                                                        lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword2,
+                                                                                                        lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword3,
+                                                                                                        lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword4,
+                                                                                                        lx2162a_pci_analyzer_values[i].RootErrorStatusRegister,
+                                                                                                        lx2162a_pci_analyzer_values[i].CorrectableErrorSourceIdRegister,
+                                                                                                        lx2162a_pci_analyzer_values[i].ErrorSourceIdRegister,
+                                                                                                        lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
 
         if (copy_to_user(&Buffer[retval], buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-        pr_info("02 %zd\n", retval);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].CorrectableErrorStatusRegister);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword1);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword2);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword3);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].HeaderLogRegisterDword4);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].RootErrorStatusRegister);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].CorrectableErrorSourceIdRegister);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-
-        scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].ErrorSourceIdRegister);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
-        {
-            pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
-            retval = -EFAULT;
-            goto terminate;
-        }
-
-        retval += strlen(buffer);
-        scnprintf(buffer, sizeof(buffer), "%08x\n", lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
-
-        if (copy_to_user(Buffer, buffer, strlen(buffer)))
         {
             pr_err("%s:%d:%s: Failed to copy value\n", __FILE__, __LINE__, __func__);
             retval = -EFAULT;
