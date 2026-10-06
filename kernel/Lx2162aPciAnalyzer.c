@@ -447,9 +447,9 @@ terminate:
 static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer, size_t Size, loff_t* Offset)
 {
     ssize_t retval  = 0;
-    u32     offset  = 0u;
     u32     size    = 0u;
-    char    buffer[32u];
+    u32     offset  = 0u;
+    char    buffer  [32u];
 
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
 
@@ -458,19 +458,22 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
         goto terminate;
     }
 
-//   scnprintf(buf, sizeof(buf), "%02d", value);
+    scnprintf(buffer, sizeof(buffer), "%s\n%u\n", _VERSION, lx2162a_pci_analyzer_driver.Offset);
 
-    if (copy_to_user(&Buffer[offset], _VERSION, strlen(_VERSION)))
+    if (copy_to_user(&Buffer[offset], buffer, strlen(buffer)))
     {
         pr_err("%s:%d:%s: Failed to copy version\n", __FILE__, __LINE__, __func__);
         retval = -EFAULT;
         goto terminate;
     }
 
-    retval += strlen(_VERSION);
+    retval += strlen(buffer);
+    offset += strlen(buffer);
+
+#if 0
 pr_info(_DRIVER_NAME ": *** %d ***\n", retval);
 goto terminate_2;
-    offset += strlen(_VERSION);
+
 
     size = _SIZE < lx2162a_pci_analyzer_driver.Offset ? _SIZE : lx2162a_pci_analyzer_driver.Offset;
 
@@ -493,7 +496,8 @@ goto terminate_2;
     }
 
     retval += sizeof(lx2162a_pci_analyzer_values);
-terminate_2:
+#endif
+
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
 
     lx2162a_pci_analyzer_driver.Offset = 0u;
