@@ -9,7 +9,7 @@ import time
 
 def read_Lx2162aPciAnalyzer_data(FilePath):
     try:
-        data = open(FilePath, "r").read()
+        data = open(FilePath, "r")
 
         if data != "":
             version = int(data.readline())
