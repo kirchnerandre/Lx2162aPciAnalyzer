@@ -513,7 +513,7 @@ static struct miscdevice lx2162a_pci_analyzer_miscdev =
 
 static int __init lx2162a_pci_analyzer_init(void)
 {
-    int advanced_error_reporting_capability_id  = 0x0100;
+//  int advanced_error_reporting_capability_id  = 0x0100;
     int retval                                  = 0;
 
     lx2162a_pci_analyzer_driver.Offset = 0u;
@@ -529,13 +529,17 @@ static int __init lx2162a_pci_analyzer_init(void)
         goto terminate;
     }
 
-    lx2162a_pci_analyzer_driver.Capability = pci_find_ext_capability(lx2162a_pci_analyzer_driver.PDev, advanced_error_reporting_capability_id);
+    lx2162a_pci_analyzer_driver.Capability = pci_find_ext_capability(lx2162a_pci_analyzer_driver.PDev, PCI_EXT_CAP_ID_ERR);
 
     if (!lx2162a_pci_analyzer_driver.Capability)
     {
         pr_err("%s:%d:%s: Capability not found\n", __FILE__, __LINE__, __func__);
         retval = -ENODEV;
         goto terminate;
+    }
+    else
+    {
+        pr_err("%s:%d:%s: Capability found %08x\n", __FILE__, __LINE__, __func__, lx2162a_pci_analyzer_driver.Capability);
     }
 
     INIT_DELAYED_WORK(&lx2162a_pci_analyzer_driver.DelayedWork, lx2162a_pci_analyzer_periodic_work);
