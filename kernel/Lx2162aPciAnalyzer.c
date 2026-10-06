@@ -449,14 +449,14 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
     u32     offset  = 0u;
     u32     size    = 0u;
     u32     version = 1u;
-pr_err("%s:%d:%s: lx2162a_pci_analyzer_read\n", __FILE__, __LINE__, __func__);
+pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 0\n", __FILE__, __LINE__, __func__);
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
-
+pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 1 %u\n", __FILE__, __LINE__, __func__, lx2162a_pci_analyzer_driver.Offset);
     if (!lx2162a_pci_analyzer_driver.Offset)
     {
         goto terminate;
     }
-
+pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 2\n", __FILE__, __LINE__, __func__);
     if (copy_to_user(&Buffer[offset], &version, sizeof(version)))
     {
         pr_err("%s:%d:%s: Failed to copy version\n", __FILE__, __LINE__, __func__);
