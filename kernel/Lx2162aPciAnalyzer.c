@@ -463,7 +463,7 @@ pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 2\n", __FILE__, __LINE__, __func__);
         retval = -EFAULT;
         goto terminate;
     }
-
+pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 3\n", __FILE__, __LINE__, __func__);
     offset += sizeof(version);
 
     size = _SIZE < lx2162a_pci_analyzer_driver.Offset ? _SIZE : lx2162a_pci_analyzer_driver.Offset;
@@ -474,7 +474,7 @@ pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 2\n", __FILE__, __LINE__, __func__);
         retval = -EFAULT;
         goto terminate;
     }
-
+pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 5\n", __FILE__, __LINE__, __func__);
     offset += sizeof(size);
 
     if (copy_to_user(&Buffer[offset], lx2162a_pci_analyzer_values, sizeof(lx2162a_pci_analyzer_values)))
@@ -483,11 +483,11 @@ pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 2\n", __FILE__, __LINE__, __func__);
         retval = -EFAULT;
         goto terminate;
     }
-
+pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 7\n", __FILE__, __LINE__, __func__);
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
 
     lx2162a_pci_analyzer_driver.Offset = 0u;
-
+pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 9\n", __FILE__, __LINE__, __func__);
 terminate:
     mutex_unlock(&lx2162a_pci_analyzer_driver.Mutex);
 
