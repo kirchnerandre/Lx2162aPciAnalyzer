@@ -1,10 +1,68 @@
 #!/usr/bin/env python3
 
-import pathlib
-
+import azure.kusto.data
+import azure.kusto.data.data_format
+import azure.kusto.ingest
 import datetime
+import json
+import pathlib
 import sys
 import time
+
+
+def send_to_kusto(
+    TimestampUp,
+    TimestampDown,
+    UncorrectableErrorStatusRegister,
+    UncorrectableErrorSeverityRegister,
+    CorrectableErrorStatusRegister,
+    HeaderLogRegisterDword1,
+    HeaderLogRegisterDword2,
+    HeaderLogRegisterDword3,
+    HeaderLogRegisterDword4,
+    RootErrorStatusRegister,
+    CorrectableErrorSourceIdRegister,
+    ErrorSourceIdRegister,
+    LaneErrorStatusRegister):
+
+    _cluster    = "https://ingest-kvc-g17c54juuue55kc9ay.southcentralus.kusto.windows.net"
+    _database   = "kirchnerandre-database"
+    _table      = "Lx2162aPciAnalyzer"
+
+    try:
+        kcsb        = azure.kusto.data.KustoConnectionStringBuilder.with_az_cli_authentication(_cluster)
+        client      = azure.kusto.ingest.QueuedIngestClient(kcsb)
+
+        row = [
+            TimestampUp,
+            TimestampDown,
+            UncorrectableErrorStatusRegister,
+            UncorrectableErrorSeverityRegister,
+            CorrectableErrorStatusRegister,
+            HeaderLogRegisterDword1,
+            HeaderLogRegisterDword2,
+            HeaderLogRegisterDword3,
+            HeaderLogRegisterDword4,
+            RootErrorStatusRegister,
+            CorrectableErrorSourceIdRegister,
+            ErrorSourceIdRegister,
+            LaneErrorStatusRegister
+        ]
+
+        csv_buffer = io.StringIO()
+
+        csv.writer(csv_buffer).writerow(row)
+
+        stream = io.BytesIO(csv_buffer.getvalue().encode("utf-8"))
+
+        properties = azure.kusto.ingest.IngestionProperties(database=_database, table=_table, data_format=azure.kusto.data.data_format.DataFormat.CSV,)
+
+        client.ingest_from_stream(azure.kusto.ingest.StreamDescriptor(stream), ingestion_properties=properties,)
+    except Exception as e:
+        print(e)
+        return False
+
+    return True
 
 
 def read_Lx2162aPciAnalyzer_data(FilePath):
@@ -46,6 +104,23 @@ def read_Lx2162aPciAnalyzer_data(FilePath):
                     f"{correctable_error_source_id_register:08X}."
                     f"{error_source_id_register:08X}."
                     f"{lane_error_status_register:08X}")
+
+                if send_to_kusto(
+                        timestamp_up,
+                        timestamp_down,
+                        uncorrectable_error_status_register,
+                        uncorrectable_error_severity_register,
+                        correctable_error_status_register,
+                        header_log_register_dword_1,
+                        header_log_register_dword_2,
+                        header_log_register_dword_3,
+                        header_log_register_dword_4,
+                        root_error_status_register,
+                        correctable_error_source_id_register,
+                        error_source_id_register,
+                        lane_error_status_register) == False:
+                    print("Failed to data to kusto")
+                    return False
 
         return True
     except Exception as e:
