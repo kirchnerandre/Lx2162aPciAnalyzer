@@ -1,4 +1,6 @@
 
+#include "qemu/units.h"
+
 #include "lx2162a_pci_device.h"
 
 

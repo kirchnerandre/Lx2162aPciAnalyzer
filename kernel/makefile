@@ -1,16 +1,15 @@
-KDIR := /lib/modules/$(shell uname -r)/build
-PWD  := $(shell pwd)
+KDIR ?= /lib/modules/$(shell uname -r)/build
+MODULE_DIR := $(CURDIR)
+BUILD_DIR := $(MODULE_DIR)/build
 
 obj-m := Lx2162aPciAnalyzer.o
-
 ccflags-y := -I$(src)
 
-BUILD_DIR := $(PWD)/build
+.PHONY: all clean
 
 all:
-	mkdir -p $(BUILD_DIR)
-	$(MAKE) -C $(KDIR) M=$(PWD) MO=$(BUILD_DIR) modules
+	mkdir -p "$(BUILD_DIR)"
+	$(MAKE) -C "$(KDIR)" M="$(MODULE_DIR)" MO="$(BUILD_DIR)" modules
 
 clean:
-	$(MAKE) -C $(KDIR) M=$(PWD) MO=$(BUILD_DIR) clean
-	rm -rf $(BUILD_DIR)
+	rm -rf "$(BUILD_DIR)"
