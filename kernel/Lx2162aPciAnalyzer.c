@@ -468,6 +468,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
     }
 
     retval += strlen(_VERSION);
+pr_info(_DRIVER_NAME ": *** %d ***\n", retval);
 goto terminate_2;
     offset += strlen(_VERSION);
 
