@@ -448,7 +448,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
 {
     ssize_t     retval  = 0;
     u32         size    = 0u;
-    u32         errors  = lx2162a_pci_analyzer_driver.Errors
+    u32         errors  = lx2162a_pci_analyzer_driver.Errors;
     const char  buffer  [16u];
 
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
