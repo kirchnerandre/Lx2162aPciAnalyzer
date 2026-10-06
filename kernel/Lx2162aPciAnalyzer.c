@@ -447,10 +447,12 @@ terminate:
 static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer, size_t Size, loff_t* Offset)
 {
     ssize_t retval  = 0;
-    u32     errors  = lx2162a_pci_analyzer_driver.Errors < _ERRORS ? lx2162a_pci_analyzer_driver.Errors : _ERRORS;
+    u32     errors  = 0u;
     char    buffer  [16u];
 
     mutex_lock(&lx2162a_pci_analyzer_driver.Mutex);
+
+    errors = lx2162a_pci_analyzer_driver.Errors < _ERRORS ? lx2162a_pci_analyzer_driver.Errors : _ERRORS;
 
     if (!errors)
     {
@@ -581,8 +583,6 @@ pr_info("01 %zd\n", retval);
         }
 
         retval += strlen(buffer);
-#endif
-
         scnprintf(&buffer[retval], sizeof(buffer), "%08x\n", lx2162a_pci_analyzer_values[i].LaneErrorStatusRegister);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
@@ -593,6 +593,8 @@ pr_info("01 %zd\n", retval);
         }
 
         retval += strlen(buffer);
+#endif
+
 pr_info("03 %zd\n", retval);
     }
 
