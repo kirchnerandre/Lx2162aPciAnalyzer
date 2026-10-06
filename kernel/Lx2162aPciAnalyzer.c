@@ -458,7 +458,7 @@ static ssize_t lx2162a_pci_analyzer_read(struct file* File, char __user* Buffer,
         goto terminate;
     }
 
-    scnprintf(buf, sizeof(buf), "%02d", value);
+//   scnprintf(buf, sizeof(buf), "%02d", value);
 
     if (copy_to_user(&Buffer[offset], _VERSION, strlen(_VERSION)))
     {
