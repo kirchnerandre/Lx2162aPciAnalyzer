@@ -15,8 +15,10 @@ def read_Lx2162aPciAnalyzer_data(FilePath):
             version = int(data.readline())
             errors  = int(data.readline())
 
-            for i in range(errors):
-                values = data.readline().split(".")
+            print("f{version} f{errors}")
+
+#           for i in range(errors):
+#               values = data.readline().split(".")
 
 #                timestamp_up                            = int(value[0])
 
