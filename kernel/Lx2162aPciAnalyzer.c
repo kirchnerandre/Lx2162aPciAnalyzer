@@ -484,7 +484,6 @@ pr_info("01 %zd\n", retval);
         retval += strlen(buffer);
         pr_info("02 %zd\n", retval);
 
-#if 0
         scnprintf(buffer, sizeof(buffer), "%08x.",  lx2162a_pci_analyzer_values[i].UncorrectableErrorSeverityRegister);
 
         if (copy_to_user(Buffer, buffer, strlen(buffer)))
@@ -593,8 +592,6 @@ pr_info("01 %zd\n", retval);
         }
 
         retval += strlen(buffer);
-#endif
-
 pr_info("03 %zd\n", retval);
     }
 
