@@ -463,6 +463,9 @@ pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 2\n", __FILE__, __LINE__, __func__);
         retval = -EFAULT;
         goto terminate;
     }
+
+    retval += sizeof(version);
+
 pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 3\n", __FILE__, __LINE__, __func__);
     offset += sizeof(version);
 
@@ -474,6 +477,9 @@ pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 3\n", __FILE__, __LINE__, __func__);
         retval = -EFAULT;
         goto terminate;
     }
+
+    retval += sizeof(size);
+
 pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 5\n", __FILE__, __LINE__, __func__);
     offset += sizeof(size);
 
@@ -483,6 +489,9 @@ pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 5\n", __FILE__, __LINE__, __func__);
         retval = -EFAULT;
         goto terminate;
     }
+
+    retval += sizeof(lx2162a_pci_analyzer_values);
+
 pr_err("%s:%d:%s: lx2162a_pci_analyzer_read 7\n", __FILE__, __LINE__, __func__);
     memset(lx2162a_pci_analyzer_values, 0, sizeof(lx2162a_pci_analyzer_values));
 
