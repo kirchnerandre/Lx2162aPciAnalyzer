@@ -17,22 +17,20 @@ def read_Lx2162aPciAnalyzer_data(FilePath):
 
             for i in range(errors):
                 values = data.readline().split(".")
-                print(values)
 
-#                timestamp_up                            = int(value[0])
-
-#                timestamp_down                          = int(line.split(".")[1])
-#                uncorrectable_error_status_register     = int(line.split(".")[2])
-#                uncorrectable_error_severity_register   = int(line.split(".")[3])
-#                correctable_error_status_register       = int(line.split(".")[4])
-#                header_log_register_dword_1             = int(line.split(".")[5])
-#                header_log_register_dword_2             = int(line.split(".")[6])
-#                header_log_register_dword_3             = int(line.split(".")[7])
-#                header_log_register_dword_4             = int(line.split(".")[8])
-#                root_error_status_register              = int(line.split(".")[9])
-#                correctable_error_source_id_register    = int(line.split(".")[10])
-#                error_source_id_register                = int(line.split(".")[11])
-#                lane_error_status_register              = int(line.split(".")[12])
+                timestamp_up                            = int(values[0])
+                timestamp_down                          = int(values[1])
+                uncorrectable_error_status_register     = int(values[2])
+                uncorrectable_error_severity_register   = int(values[3])
+                correctable_error_status_register       = int(values[4])
+                header_log_register_dword_1             = int(values[5])
+                header_log_register_dword_2             = int(values[6])
+                header_log_register_dword_3             = int(values[7])
+                header_log_register_dword_4             = int(values[8])
+                root_error_status_register              = int(values[9])
+                correctable_error_source_id_register    = int(values[10])
+                error_source_id_register                = int(values[11])
+                lane_error_status_register              = int(values[12])
 
 #                print(
 #                    f"{timestamp_up}.")
