@@ -104,5 +104,5 @@ def main(Kusto):
 if __name__ == "__main__":
     if "--debug" in sys.argv:
         main(False)
-    else
+    else:
         main(True)
