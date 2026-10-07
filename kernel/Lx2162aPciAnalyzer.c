@@ -26,7 +26,6 @@ struct Lx2162aPciAnalyzerDriver
     struct pci_dev*     PDev;
     struct mutex        Mutex;
     u32                 Errors;
-    s32                 Capability;
 };
 
 
@@ -528,46 +527,45 @@ static int __init lx2162a_pci_analyzer_init(void)
     {
         pr_err("%s:%d:%s: Device not found\n", __FILE__, __LINE__, __func__);
         retval = - ENODEV;
-        goto terminate;
+        goto terminate_1;
     }
 
-    lx2162a_pci_analyzer_driver.Capability = pci_find_ext_capability(lx2162a_pci_analyzer_driver.PDev, PCI_EXT_CAP_ID_ERR);
-
-    if (!lx2162a_pci_analyzer_driver.Capability)
+    if (!pci_find_ext_capability(lx2162a_pci_analyzer_driver.PDev, PCI_EXT_CAP_ID_ERR))
     {
         pr_err("%s:%d:%s: Capability not found\n", __FILE__, __LINE__, __func__);
         retval = -ENODEV;
-        goto terminate;
+        goto terminate_2;
     }
-
-    INIT_DELAYED_WORK(&lx2162a_pci_analyzer_driver.DelayedWork, lx2162a_pci_analyzer_periodic_work);
 
     retval = misc_register(&lx2162a_pci_analyzer_miscdev);
 
     if (retval)
     {
         pr_err("%s:%d:%s: Failed to register device\n", __FILE__, __LINE__, __func__);
-        goto terminate;
+        goto terminate_2;
     }
 
     if (lx2162a_pci_analyzer_configure())
     {
         pr_err("%s:%d:%s: Failed to configure device\n", __FILE__, __LINE__, __func__);
-        goto terminate;
+        goto terminate_3;
     }
+
+    INIT_DELAYED_WORK(&lx2162a_pci_analyzer_driver.DelayedWork, lx2162a_pci_analyzer_periodic_work);
 
     schedule_delayed_work(&lx2162a_pci_analyzer_driver.DelayedWork, msecs_to_jiffies(_RESOLUTION));
 
-terminate:
-    if (retval)
-    {
-        pci_dev_put(lx2162a_pci_analyzer_driver.PDev);
-    }
-    else
-    {
-        pr_info(_DRIVER_NAME ": (%04x:%04x) loaded\n", lx2162a_pci_analyzer_driver.PDev->vendor, lx2162a_pci_analyzer_driver.PDev->device);
-    }
+    pr_info(_DRIVER_NAME ": (%04x:%04x) loaded\n", lx2162a_pci_analyzer_driver.PDev->vendor, lx2162a_pci_analyzer_driver.PDev->device);
 
+    return 0;
+
+terminate_3:
+    misc_deregister(&lx2162a_pci_analyzer_miscdev);
+
+terminate_2:
+    pci_dev_put(lx2162a_pci_analyzer_driver.PDev);
+
+terminate_1:
     return retval;
 }
 
