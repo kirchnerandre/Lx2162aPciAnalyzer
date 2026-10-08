@@ -18,9 +18,9 @@ _table      = "Lx2162aPciAnalyzer"
 
 def read_Lx2162aPciAnalyzer_data(FilePath, Debug):
     try:
-        if os.path.getsize(FilePath) != 0:
-            data    = open(FilePath, "r")
+        data = open(FilePath, "r").read()
 
+        if data != "":
             version = int(data.readline())
             errors  = int(data.readline())
 
