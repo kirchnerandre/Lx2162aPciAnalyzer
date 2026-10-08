@@ -21,7 +21,7 @@ def read_Lx2162aPciAnalyzer_data(FilePath, Debug):
     try:
         lines = open(FilePath, "r").read().splitlines()
 
-        if lines > 0:
+        if lines:
             version = int(lines[0])
             errors  = int(lines[1])
 
