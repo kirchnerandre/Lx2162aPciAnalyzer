@@ -18,14 +18,14 @@ _table      = "Lx2162aPciAnalyzer"
 
 def read_Lx2162aPciAnalyzer_data(FilePath, Debug):
     try:
-        data = open(FilePath, "r").read()
+        lines = open(FilePath, "r").read().splitlines()
 
-        if data != "":
-            version = int(data.readline())
-            errors  = int(data.readline())
+        if lines > 0:
+            version = int(lines[0])
+            errors  = int(lines[1])
 
             for i in range(errors):
-                values = data.readline().split(".")
+                values = lines[2 + i].split(".")
 
                 timestamp_up                            = int(values[0])
                 timestamp_down                          = int(values[1])
