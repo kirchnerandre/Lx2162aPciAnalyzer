@@ -548,6 +548,7 @@ static int __init lx2162a_pci_analyzer_init(void)
     if (lx2162a_pci_analyzer_configure())
     {
         pr_err("%s:%d:%s: Failed to configure device\n", __FILE__, __LINE__, __func__);
+        retval = -ENODEV;
         goto terminate_3;
     }
 

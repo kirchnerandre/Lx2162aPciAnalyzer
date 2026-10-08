@@ -4,9 +4,6 @@
 #include "lx2162a_pci_device.h"
 
 
-static void device_reset(PCIDevice* PciDevice);
-
-
 static uint32_t config_read(PCIDevice* PciDevice, uint32_t Address, int Length)
 {
     uint32_t value = pci_default_read_config(PciDevice, Address, Length);
@@ -65,8 +62,6 @@ static void config_write_w1c(PCIDevice* PciDevice, uint32_t Address, uint32_t Va
     value &= ~Value;
 
     config_write_normal(PciDevice, Address, value, Length);
-
-    device_reset(PciDevice);
 }
 
 
@@ -137,18 +132,6 @@ static void config_write(PCIDevice* PciDevice, uint32_t Address, uint32_t Value,
 }
 
 
-static void device_reset(PCIDevice* PciDevice)
-{
-    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_UNCORRECTABLE_ERROR_SEVERITY_REGISTER,            _INITIAL_UNCORRECTABLE_ERROR_SEVERITY_REGISTER,            _SIZE_UNCORRECTABLE_ERROR_SEVERITY_REGISTER);
-    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD1,                       _INITIAL_HEADER_LOG_REGISTER_DWORD1,                       _SIZE_HEADER_LOG_REGISTER_DWORD1);
-    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD2,                       _INITIAL_HEADER_LOG_REGISTER_DWORD2,                       _SIZE_HEADER_LOG_REGISTER_DWORD2);
-    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD3,                       _INITIAL_HEADER_LOG_REGISTER_DWORD3,                       _SIZE_HEADER_LOG_REGISTER_DWORD3);
-    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD4,                       _INITIAL_HEADER_LOG_REGISTER_DWORD4,                       _SIZE_HEADER_LOG_REGISTER_DWORD4);
-    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_CORRECTABLE_ERROR_SOURCE_ID_REGISTER,             _INITIAL_CORRECTABLE_ERROR_SOURCE_ID_REGISTER,             _SIZE_CORRECTABLE_ERROR_SOURCE_ID_REGISTER);
-    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ERROR_SOURCE_ID_REGISTER,                         _INITIAL_ERROR_SOURCE_ID_REGISTER,                         _SIZE_ERROR_SOURCE_ID_REGISTER);
-}
-
-
 static void device_init(PCIDevice* PciDevice, Error** Error)
 {
     if (pcie_endpoint_cap_init(PciDevice, 0x80) < 0)
@@ -173,7 +156,13 @@ static void device_init(PCIDevice* PciDevice, Error** Error)
     config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ROOT_ERROR_STATUS_REGISTER,                       _INITIAL_ROOT_ERROR_STATUS_REGISTER,                       _SIZE_ROOT_ERROR_STATUS_REGISTER);
     config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_LANE_ERROR_STATUS_REGISTER,                       _INITIAL_LANE_ERROR_STATUS_REGISTER,                       _SIZE_LANE_ERROR_STATUS_REGISTER);
 
-    device_reset(PciDevice);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_UNCORRECTABLE_ERROR_SEVERITY_REGISTER,            _INITIAL_UNCORRECTABLE_ERROR_SEVERITY_REGISTER,            _SIZE_UNCORRECTABLE_ERROR_SEVERITY_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD1,                       _INITIAL_HEADER_LOG_REGISTER_DWORD1,                       _SIZE_HEADER_LOG_REGISTER_DWORD1);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD2,                       _INITIAL_HEADER_LOG_REGISTER_DWORD2,                       _SIZE_HEADER_LOG_REGISTER_DWORD2);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD3,                       _INITIAL_HEADER_LOG_REGISTER_DWORD3,                       _SIZE_HEADER_LOG_REGISTER_DWORD3);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_HEADER_LOG_REGISTER_DWORD4,                       _INITIAL_HEADER_LOG_REGISTER_DWORD4,                       _SIZE_HEADER_LOG_REGISTER_DWORD4);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_CORRECTABLE_ERROR_SOURCE_ID_REGISTER,             _INITIAL_CORRECTABLE_ERROR_SOURCE_ID_REGISTER,             _SIZE_CORRECTABLE_ERROR_SOURCE_ID_REGISTER);
+    config_write(PciDevice, _CAPABILITY_ID_ADVANCED_ERROR_CONTROL + _DELTA_ERROR_SOURCE_ID_REGISTER,                         _INITIAL_ERROR_SOURCE_ID_REGISTER,                         _SIZE_ERROR_SOURCE_ID_REGISTER);
 }
 
 
