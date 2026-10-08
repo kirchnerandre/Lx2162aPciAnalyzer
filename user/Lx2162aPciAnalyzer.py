@@ -5,6 +5,7 @@
 #import azure.kusto.ingest
 import datetime
 import json
+import os
 import pathlib
 import sys
 import time
@@ -17,9 +18,9 @@ _table      = "Lx2162aPciAnalyzer"
 
 def read_Lx2162aPciAnalyzer_data(FilePath, Kusto):
     try:
-        data = open(FilePath, "r")
+        if os.path.getsize(FilePath) != 0:
+            data    = open(FilePath, "r")
 
-        if data != "":
             version = int(data.readline())
             errors  = int(data.readline())
 
