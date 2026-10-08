@@ -9,6 +9,7 @@ import os
 import pathlib
 import sys
 import time
+import traceback
 
 
 _cluster    = "https://ingest-kvc-g17c54juuue55kc9ay.southcentralus.kusto.windows.net"
@@ -89,6 +90,7 @@ def read_Lx2162aPciAnalyzer_data(FilePath, Debug):
         return True
     except Exception as e:
         print(e)
+        traceback.print_exc()
         return False
 
 
