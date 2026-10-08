@@ -16,7 +16,7 @@ _database   = "kirchnerandre-database"
 _table      = "Lx2162aPciAnalyzer"
 
 
-def read_Lx2162aPciAnalyzer_data(FilePath, Kusto):
+def read_Lx2162aPciAnalyzer_data(FilePath, Debug):
     try:
         if os.path.getsize(FilePath) != 0:
             data    = open(FilePath, "r")
@@ -41,22 +41,7 @@ def read_Lx2162aPciAnalyzer_data(FilePath, Kusto):
                 error_source_id_register                = int(values[11])
                 lane_error_status_register              = int(values[12])
 
-                print(
-                    f"{timestamp_up}."
-                    f"{timestamp_down}."
-                    f"{uncorrectable_error_status_register:08X}."
-                    f"{uncorrectable_error_severity_register:08X}."
-                    f"{correctable_error_status_register:08X}."
-                    f"{header_log_register_dword_1:08X}."
-                    f"{header_log_register_dword_2:08X}."
-                    f"{header_log_register_dword_3:08X}."
-                    f"{header_log_register_dword_4:08X}."
-                    f"{root_error_status_register:08X}."
-                    f"{correctable_error_source_id_register:08X}."
-                    f"{error_source_id_register:08X}."
-                    f"{lane_error_status_register:08X}")
-
-                if Kusto:
+                if Debug:
                     kcsb        = azure.kusto.data.KustoConnectionStringBuilder.with_az_cli_authentication(_cluster)
                     client      = azure.kusto.ingest.QueuedIngestClient(kcsb)
 
@@ -85,6 +70,21 @@ def read_Lx2162aPciAnalyzer_data(FilePath, Kusto):
                     properties = azure.kusto.ingest.IngestionProperties(database=_database, table=_table, data_format=azure.kusto.data.data_format.DataFormat.CSV,)
 
                     client.ingest_from_stream(azure.kusto.ingest.StreamDescriptor(stream), ingestion_properties=properties,)
+                else:
+                    print(
+                        f"{timestamp_up}."
+                        f"{timestamp_down}."
+                        f"{uncorrectable_error_status_register:08X}."
+                        f"{uncorrectable_error_severity_register:08X}."
+                        f"{correctable_error_status_register:08X}."
+                        f"{header_log_register_dword_1:08X}."
+                        f"{header_log_register_dword_2:08X}."
+                        f"{header_log_register_dword_3:08X}."
+                        f"{header_log_register_dword_4:08X}."
+                        f"{root_error_status_register:08X}."
+                        f"{correctable_error_source_id_register:08X}."
+                        f"{error_source_id_register:08X}."
+                        f"{lane_error_status_register:08X}")
 
         return True
     except Exception as e:
@@ -92,10 +92,10 @@ def read_Lx2162aPciAnalyzer_data(FilePath, Kusto):
         return False
 
 
-def main(Kusto):
+def main(Debug):
     file_path = pathlib.Path("/dev/Lx2162aPciAnalyzer")
 
-    if read_Lx2162aPciAnalyzer_data(file_path, Kusto) == False:
+    if read_Lx2162aPciAnalyzer_data(file_path, Debug) == False:
         print("Failed to read /dev/Lx2162aPciAnalyzer data")
         return -1
 
