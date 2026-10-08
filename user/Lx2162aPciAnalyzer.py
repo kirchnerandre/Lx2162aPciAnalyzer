@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import azure.kusto.data
-import azure.kusto.data.data_format
-import azure.kusto.ingest
+#import azure.kusto.data
+#import azure.kusto.data.data_format
+#import azure.kusto.ingest
 import datetime
 import json
 import pathlib
